@@ -234,11 +234,11 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         String requestIdStatus = checkRequestIdStatus(requestId);
 
-        if (requestIdStatus == "VP_SUBMITTED") {
+        if (requestIdStatus.equals("VP_SUBMITTED")) {
 
             String transactionIdStatus = checkTransactionIdStatus(transactionId);
 
-            if(transactionIdStatus == "VALID"){
+            if(transactionIdStatus.equals("VALID")){
 
                 response.put("valid", true);
                 response.put("message", "Verification successful");
