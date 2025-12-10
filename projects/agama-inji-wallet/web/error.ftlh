@@ -20,17 +20,32 @@
 			<img src="https://gluu.org/wp-content/uploads/2020/12/logo.png">
 		  </div>
 		  <span class="text-2xl font-semi-bold leading-normal">Error details</span>
-			 [#if errorMessage?has_content]
-			<div role="alert" align="center" class="alert alert-danger mt-3 error">
-			  <p>${errorMessage} 
-			  </p>
-			</div>
-			[/#if]
+		  [#if errorMessage?has_content]
+		  <div role="alert" align="center" class="alert alert-danger mt-3 error">
+			<p>${errorMessage} 
+			</p>
+		  </div>
+		  [/#if]
 		</div>
 	  </div>
 	</div>
   
+  
+  
 </body>
-
+<style>
+	.required {
+	  color: red;
+	}
+	.error-message {
+	  color: red;
+	  font-size: 13px;
+	  margin-top: 5px;
+	}
+	.error{
+	  font-weight: bold;
+	  color: red;
+	}
+  </style>
 
 </html>
