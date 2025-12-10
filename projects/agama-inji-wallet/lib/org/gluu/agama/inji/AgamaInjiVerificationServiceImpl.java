@@ -287,7 +287,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             Map<String, Object> mapData = mapper.readValue(response.body(), Map.class);
             Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
 
-            if (data == null || !data.containsKey("Status")) {
+            if (data != null || data.containsKey("Status")) {
                 // return data.get("status").toString();
                 return "VALID";
             } else {
@@ -333,7 +333,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             Map<String, Object> mapData = mapper.readValue(response.body(), Map.class);
             Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
 
-            if (data == null || !data.containsKey("Status")) {
+            if (data != null || data.containsKey("Status")) {
                 // return data.get("status").toString();
                 return "VP_SUBMITTED";
             } else {
