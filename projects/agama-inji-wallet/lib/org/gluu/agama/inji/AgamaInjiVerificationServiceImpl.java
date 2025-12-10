@@ -124,7 +124,10 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             if (response.statusCode() != 200) {
                 LogUtils.log("ERROR: INJI Verify returned status code: %", response.statusCode());
-                return false;
+                responseMap.put("valid", false);
+
+                responseMap.put("message", "ERROR: INJI BACKEND returned status code: % "+response.statusCode());
+                return responseMap;
             }
             String jsonResponse = response.body();
             LogUtils.log("INJI Backend Response: %", jsonResponse);
