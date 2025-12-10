@@ -131,8 +131,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             // Parse JSON using your existing ObjectMapper
             ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> consentMap = mapper.readValue(jsonResponse, Map.class);
-            Map<String, Object> data = (Map<String, Object>) consentMap.get("Data");
+            Map<String, Object> data = mapper.readValue(jsonResponse, Map.class);
+            // Map<String, Object> data = (Map<String, Object>) consentMap.get("Data");
 
             // if (data == null || !data.containsKey("requestId") || !data.containsKey("transactionId")) {
             //     LogUtils.log("ERROR: Missing Data from INJI backend Response response");
