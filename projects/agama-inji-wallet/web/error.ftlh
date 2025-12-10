@@ -21,23 +21,6 @@
 		  </div>
 		  <span class="text-2xl font-semi-bold leading-normal">Error details</span>
 		</div>
-		<form method="post" class="mt-8">
-		  <div id="otp" class="flex flex-row justify-center text-center px-2 mt-5">
-			<input type="text" id="first" required="" name="first" maxlength="1" class="m-2 border h-10 w-10 text-center form-control rounded">
-			<input type="text" id="second" required="" name="second" maxlength="1" class="m-2 border h-10 w-10 text-center form-control rounded">
-			<input type="text" id="third" required="" name="third" maxlength="1" class="m-2 border h-10 w-10 text-center form-control rounded">
-			<input type="text" id="fourth" required="" name="fourth" maxlength="1" class="m-2 border h-10 w-10 text-center form-control rounded">
-			<input type="text" id="fifth" required="" name="fifth" maxlength="1" class="m-2 border h-10 w-10 text-center form-control rounded">
-			<input type="text" id="sixth" required="" name="sixth" maxlength="1" class="m-2 border h-10 w-10 text-center form-control rounded">
-		  </div>
-		  <div class="space-y-9 mt-4">
-			<div class="text-sm flex justify-center items-center">
-			  <button type="submit" class="py-2 px-6 rounded text-white btn bg-green-500 hover:bg-green-600">
-				Submit
-			  </button>
-			</div>
-		  </div>
-		</form>
 	  </div>
 	</div>
   
