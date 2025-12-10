@@ -11,7 +11,7 @@ public abstract class AgamaInjiVerificationService{
 
     public abstract String createOpenidRequestUrl(String requestId, String transactionId);
 
-    public abstract Map<String, Object> verifyInjiAppResult(Map<String, String> resultFromapp);
+    public abstract Map<String, Object> verifyInjiAppResult(Map<String, String> resultFromapp, String requestId, String transactionId);
 
     public static AgamaInjiVerificationService getInstance(){
         return AgamaInjiVerificationServiceImpl.getInstance();
