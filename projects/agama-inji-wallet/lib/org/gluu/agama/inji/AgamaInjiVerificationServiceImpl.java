@@ -89,7 +89,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             String clientId = sessionAttrs.get("client_id");
             this.CLIENT_ID = clientId;
             // Build DEMO Authorization Request Payload
-            LogUtils.log("Build authorization request Payload and send a POST Request to INJI BACKEND API");
+            LogUtils.log("Build authorization request Payload and send a POST Request to INJI BACKEND API...");
             Map<String, Object> authRequest = new HashMap<>();
             // authRequest.put("client_id", clientId);
             // authRequest.put("scope", "openid");
@@ -233,6 +233,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         LogUtils.log("INJI user back to agama...");
 
+        LogUtils.log("Data : %", resultFromApp);
         String requestIdStatus = checkRequestIdStatus(requestId);
 
         if (!"VP_SUBMITTED".equals(requestIdStatus)) {
