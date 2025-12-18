@@ -108,7 +108,10 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             String jsonPayload = new ObjectMapper().writeValueAsString(authRequest);
 
             String endpoint = this.INJI_BACKEND_BASE_URL + "/v1/verify/vp-request";
-            String payload = (String) sessionAttrs.get("request");
+            // String payload = (String) sessionAttrs.get("request"); presentationDefinition
+            String payload = (String) sessionAttrs.get("param");
+            LogUtils.log("Request param: %", payload);
+            
             HttpClient httpClient = HttpClient.newBuilder()
                     .followRedirects(HttpClient.Redirect.NORMAL) 
                     .build();
