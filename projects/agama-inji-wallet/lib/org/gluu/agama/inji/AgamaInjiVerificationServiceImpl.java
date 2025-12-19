@@ -118,7 +118,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                                     "constraints", Map.of(
                                             "fields", new Object[]{
                                                     Map.of(
-                                                            "path", new String[]{"$.type"},
+                                                            "path", new String[]{"\\$.type"},
                                                             "filter", Map.of(
                                                                     "type", "object",
                                                                     "pattern", "MOSIPVerifiableCredential"
