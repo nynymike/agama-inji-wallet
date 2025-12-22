@@ -223,16 +223,16 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             LogUtils.log(clientMetadataJson);
             // Build final URL
-            String url = baseUrl
-                    + "?client_id=" + URLEncoder.encode(this.CLIENT_ID, StandardCharsets.UTF_8)
-                    + "&client_id_scheme=pre-registered"
-                    + "&presentation_definition=" + URLEncoder.encode(presentationDefinitionJson, StandardCharsets.UTF_8)
-                    + "&nonce=" + URLEncoder.encode(nonce, StandardCharsets.UTF_8)
-                    + "&response_uri=" + URLEncoder.encode(CALLBACK_URL, StandardCharsets.UTF_8)
-                    + "&response_type=vp_token"
-                    + "&response_mode=direct_post"
-                    + "&state=" + URLEncoder.encode(requestId, StandardCharsets.UTF_8)
-                    + "&client_metadata=" + URLEncoder.encode(clientMetadataJson, StandardCharsets.UTF_8);
+            String url = baseUrl +
+                    "?client_id=" + URLEncoder.encode(CLIENT_ID, StandardCharsets.UTF_8) +
+                    "&client_id_scheme=pre-registered" +
+                    "&presentation_definition=" + URLEncoder.encode(presentationDefinitionJson, StandardCharsets.UTF_8) +
+                    "&nonce=" + URLEncoder.encode(nonce, StandardCharsets.UTF_8) +
+                    "&response_uri=" + URLEncoder.encode(CALLBACK_URL, StandardCharsets.UTF_8) +
+                    "&response_type=vp_token" +
+                    "&response_mode=direct_post" +
+                    "&state=" + URLEncoder.encode(requestId, StandardCharsets.UTF_8) +
+                    "&client_metadata=" + URLEncoder.encode(clientMetadataJson, StandardCharsets.UTF_8);
 
             LogUtils.log("URL : %", url);
             return url;
