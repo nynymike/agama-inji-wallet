@@ -200,7 +200,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         try {
             LogUtils.log("Preparing OpenID4VP request URL for Inji Web");
 
-            String nonce = new this.AUTHORIZATION_DETAILS.get("nonce").toString();
+            String nonce = this.AUTHORIZATION_DETAILS.get("nonce").toString();
             LogUtils.log("NONCE : %", nonce);
             String baseUrl = this.INJI_WEB_BASE_URL + "/authorize";
 
