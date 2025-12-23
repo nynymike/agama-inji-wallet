@@ -248,13 +248,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     public Map<String, Object> verifyInjiAppResult(Map<String, String> resultFromApp, String requestId, String transactionId) {
         // Example implementation
         Map<String, Object> response = new HashMap<>();
-        // if (resultFromApp.containsKey("status") && "success".equals(resultFromApp.get("status"))) {
-        //     response.put("verified", true);
-        //     response.put("message", "Verification successful");
-        // } else {
-        //     response.put("verified", false);
-        //     response.put("message", "Verification failed");
-        // }
 
         LogUtils.log("INJI user back to agama...");
 
@@ -263,34 +256,33 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         if (!"VP_SUBMITTED".equals(requestIdStatus)) {
             response.put("valid", false);
-            response.put("message", "Error: Request id is EXPIRED");
+            response.put("message", "Error: VP REQUEST ID STATUS is " + requestIdStatus);
             return response;
         }
 
         String transactionIdStatus = checkTransactionIdStatus(transactionId);
 
-        if (!"VALID".equals(transactionIdStatus)) {
+        if (!"SUCCESS".equals(transactionIdStatus)) {
             response.put("valid", false);
-            response.put("message", "Error: Transaction id is INVALID");
+            response.put("message", "Error: No VP submission found for given transaction ID " + transactionIdStatus);
             return response;
         }
 
         response.put("valid", true);
-        response.put("message", "Verification successful");
+        response.put("message", "VP TOKEN Verification successful");
         return response;
 
     }
     
     private String checkTransactionIdStatus(String transactionId) {
         try {
-            LogUtils.log("Validating INJI Transaction-id for : %", transactionId);
-            // String apiUrl = this.INJI_BACKEND_BASE_URL + "/vp-result/" + transactionId;
-            String apiUrl = "http://mmrraju-comic-pup.gluu.info/account-access-consents/" + "intent-id-123456";
+            LogUtils.log("Validating VP TRANSACTION ID STATUS for : %", transactionId);
+            String apiUrl = this.INJI_BACKEND_BASE_URL + "/v1/verify/vp-result/" + transactionId;
+            // String apiUrl = "http://mmrraju-comic-pup.gluu.info/account-access-consents/" + "intent-id-123456";
 
             HttpClient httpClient = HttpClient.newBuilder()
                     .followRedirects(HttpClient.Redirect.NORMAL)
                     .build();
-
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
                     .header("Accept", "application/json")
@@ -301,22 +293,23 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != 200) {
-                LogUtils.log("ERROR: INJI BACKEND API returned status code: %", response.statusCode());
+            if (response.statusCode() == 200) {
+                LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR TRANSACTION-ID : %", response.body());
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> data = mapper.readValue(response.body(), Map.class);
+                // Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
+
+                if (data != null || data.containsKey("vpResultStatus")) {
+                    return data.get("vpResultStatus").toString();
+                } else {
+                    return "UNKNOWN";
+                }
+            }else{
+                LogUtils.log("ERROR: INJI VP TOKEN FOR TRANSACTION ID status code: %", response.statusCode());
                 return "UNKNOWN";
             }
 
-            LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR TRANSACTION-ID : %", response.body());
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> mapData = mapper.readValue(response.body(), Map.class);
-            Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
-
-            if (data != null || data.containsKey("Status")) {
-                // return data.get("status").toString();
-                return "VALID";
-            } else {
-                return "UNKNOWN";
-            }
+            
 
         } catch (Exception e) {
             LogUtils.log("ERROR: Exception in checkTransactionIdStatus: %", e.getMessage());
@@ -327,11 +320,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     private String checkRequestIdStatus(String requestId) {
         try {
 
-            LogUtils.log("Validating INJI Request-id for : %", requestId);
-            // String apiUrl = this.INJI_BACKEND_BASE_URL + "/verifyServiceURL/vp-request/" + requestId + "/status";
-
-            String apiUrl = "http://mmrraju-comic-pup.gluu.info/account-access-consents/" + "intent-id-123456";
-
+            LogUtils.log("Validating VP REQUEST STATUS for : %", requestId);
+            String apiUrl = this.INJI_BACKEND_BASE_URL + "/v1/verify/vp-request/" + requestId + "/status";
             HttpClient httpClient = HttpClient.newBuilder()
                     .followRedirects(HttpClient.Redirect.NORMAL)
                     .build();
@@ -346,26 +336,23 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-            if (response.statusCode() != 200) {
-                LogUtils.log("ERROR: INJI BACKEND API returned status code: %", response.statusCode());
+            if (response.statusCode()== 200) {
+                LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR REQUEST-ID : %", response.body());
+                ObjectMapper mapper = new ObjectMapper();
+                Map<String, Object> data = mapper.readValue(response.body(), Map.class);
+
+                if (data != null || data.containsKey("status")) {
+                    LogUtils.log("VP REQUEST STATUS : %", data.get("status") );
+                    return data.get("status").toString();
+                } else {
+                    return "UNKNOWN";
+                }
+            }else{
+                LogUtils.log("ERROR: VP Request status code: %", response.statusCode());
                 return "UNKNOWN";
             }
-
-            LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR REQUEST-ID : %", response.body());
-            //  Parse JSON response
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> mapData = mapper.readValue(response.body(), Map.class);
-            Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
-
-            if (data != null || data.containsKey("Status")) {
-                // return data.get("status").toString();
-                return "VP_SUBMITTED";
-            } else {
-                return "UNKNOWN";
-            }
-
         } catch (Exception e) {
-            LogUtils.log("ERROR: Exception in checkRequestIdStatus: %", e.getMessage());
+            LogUtils.log("ERROR: Exception in GET VP Request STATUS: %", e.getMessage());
             return "UNKNOWN";
         }
     }
