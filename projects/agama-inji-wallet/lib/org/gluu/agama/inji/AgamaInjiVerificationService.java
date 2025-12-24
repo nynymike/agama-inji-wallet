@@ -13,7 +13,7 @@ public abstract class AgamaInjiVerificationService{
 
     public abstract Map<String, Object> verifyInjiAppResult(Map<String, String> resultFromapp, String requestId, String transactionId);
 
-    public static AgamaInjiVerificationService getInstance(){
-        return AgamaInjiVerificationServiceImpl.getInstance();
+    public static AgamaInjiVerificationService getInstance(HashMap config){
+        return AgamaInjiVerificationServiceImpl.getInstance(config);
     }
 }
