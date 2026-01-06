@@ -9,7 +9,7 @@ public abstract class AgamaInjiVerificationService{
 
     public abstract Map<String, Object> createVpVerificationRequest();
 
-    public abstract String createOpenidRequestUrl(String requestId, String transactionId);
+    public abstract String buildInjiWebAuthorizationUrl(String requestId, String transactionId);
 
     public abstract Map<String, Object> verifyInjiAppResult(Map<String, String> resultFromapp, String requestId, String transactionId);
 
