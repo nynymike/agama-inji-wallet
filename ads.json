@@ -18,7 +18,6 @@
         "noDirectLaunch": [],
         "configs": {
             "com.gluu.agama.inji.verifyCredential": {
-                "agamaCallbackUrl": "https://mmrraju-promoted-macaque.gluu.info/jans-auth/fl/callback",
                 "injiWebBaseURL": "https://injiweb.collab.mosip.net",
                 "injiVerifyBaseURL": "https://injiverify.collab.mosip.net",
                 "presentationDefinition": {
