@@ -175,7 +175,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
 
     @Override
-    public String createOpenidRequestUrl(String requestId, String transactionId) {
+    public String buildInjiWebAuthorizationUrl(String requestId, String transactionId) {
         try {
             LogUtils.log("Preparing OpenID4VP request URL for Inji Web");
 
