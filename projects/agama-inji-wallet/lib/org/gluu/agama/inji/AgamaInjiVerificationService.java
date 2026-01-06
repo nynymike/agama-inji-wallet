@@ -7,7 +7,7 @@ import org.gluu.agama.inji.AgamaInjiVerificationServiceImpl;
 
 public abstract class AgamaInjiVerificationService{
 
-    public abstract Map<String, Object> verifyServiceURL();
+    public abstract Map<String, Object> createVpVerificationRequest();
 
     public abstract String createOpenidRequestUrl(String requestId, String transactionId);
 
