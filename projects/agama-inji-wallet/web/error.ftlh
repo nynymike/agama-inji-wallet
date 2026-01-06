@@ -30,7 +30,7 @@
 		<form method="post" id="myForm" class="my-8">
 		  <div class="space-y-9">
 			<div class="button">
-			  <button type="submit" class="btn">Continue</button>
+			  <button type="submit" class="btn">Ok</button>
 			</div>
 		  </div>
 		</form>
@@ -39,7 +39,6 @@
   
   
   
-
 </body>
 <style>
 	.required {
@@ -53,7 +52,8 @@
 	.error{
 	  font-weight: bold;
 	  color: red;
-	}	.button {
+	}
+	.button {
 	  display: flex;
 	  justify-content: center;
 	  gap: 20px;
