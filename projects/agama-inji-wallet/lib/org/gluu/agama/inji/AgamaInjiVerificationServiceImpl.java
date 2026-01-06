@@ -11,19 +11,19 @@ import io.jans.service.cdi.util.CdiUtil;
 import io.jans.agama.engine.script.LogUtils;
 import io.jans.util.StringHelper;
 
-import io.jans.as.model.config.WebKeysConfiguration;
-import io.jans.as.model.configuration.AppConfiguration;
-import io.jans.as.model.crypto.CryptoProviderFactory;
-import io.jans.as.model.crypto.AbstractCryptoProvider;
-import io.jans.as.model.crypto.signature.SignatureAlgorithm;
+// import io.jans.as.model.config.WebKeysConfiguration;
+// import io.jans.as.model.configuration.AppConfiguration;
+// import io.jans.as.model.crypto.CryptoProviderFactory;
+// import io.jans.as.model.crypto.AbstractCryptoProvider;
+// import io.jans.as.model.crypto.signature.SignatureAlgorithm;
 
-import io.jans.as.model.exception.CryptoProviderException;
+// import io.jans.as.model.exception.CryptoProviderException;
 import io.jans.as.model.exception.InvalidJwtException;
 
-import io.jans.as.model.jwk.JSONWebKey;
-import io.jans.as.model.jwk.Use;
-import io.jans.as.model.jwt.Jwt;
-import io.jans.as.model.jwt.JwtHeader;
+// import io.jans.as.model.jwk.JSONWebKey;
+// import io.jans.as.model.jwk.Use;
+// import io.jans.as.model.jwt.Jwt;
+// import io.jans.as.model.jwt.JwtHeader;
 import io.jans.service.cdi.util.CdiUtil;
 import io.jans.as.server.service.ClientService;
 
@@ -177,7 +177,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     @Override
     public String buildInjiWebAuthorizationUrl(String requestId, String transactionId) {
         try {
-            LogUtils.log("Preparing OpenID4VP request URL for Inji Web");
+            LogUtils.log("Preparing Inji web Authorization Url...");
 
             String nonce = this.AUTHORIZATION_DETAILS.get("nonce").toString();
             // LogUtils.log("NONCE : %", nonce);
@@ -194,7 +194,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     "&presentation_definition=" + URLEncoder.encode(presentationDefinitionJson, StandardCharsets.UTF_8) +
                     "&nonce=" + URLEncoder.encode(nonce, StandardCharsets.UTF_8) +
                     "&response_uri=" + URLEncoder.encode(this.AUTHORIZATION_DETAILS.get("responseUri"), StandardCharsets.UTF_8) +
-                    // "&callback_url=" + URLEncoder.encode(this.CALLBACK_URL, StandardCharsets.UTF_8) +
                     "&response_type=" +this.AUTHORIZATION_DETAILS.get("responseType")  +
                     "&response_mode=" + this.AUTHORIZATION_DETAILS.get("responseMode") +
                     "&state=" + URLEncoder.encode(requestId, StandardCharsets.UTF_8) +
@@ -204,7 +203,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             return url;
 
         } catch (Exception e) {
-            LogUtils.log("ERROR: Failed to build OpenID4VP URL: %", e.getMessage());
+            LogUtils.log("ERROR: Failed to build Inji Web Authorization URL: %", e.getMessage());
             return null;
         }
     }
