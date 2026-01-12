@@ -19,7 +19,7 @@
 		  <div class="flex">
 			<img src="https://gluu.org/wp-content/uploads/2020/12/logo.png">
 		  </div>
-		  <p>You've successfully verify you VP
+		  <p>VP Verification Successful !!!
 		  </p>
 		  <p>
 		  </p>
