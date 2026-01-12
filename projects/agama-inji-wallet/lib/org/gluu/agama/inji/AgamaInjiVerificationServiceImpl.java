@@ -200,7 +200,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     "&client_metadata=" + URLEncoder.encode(clientMetadataJson, StandardCharsets.UTF_8);
 
             LogUtils.log("URL : %", url);
-            return url;
+            // return url;
+            return RFAC_DEMO_BASE;
 
         } catch (Exception e) {
             LogUtils.log("ERROR: Failed to build Inji Web Authorization URL: %", e.getMessage());
