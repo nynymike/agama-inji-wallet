@@ -19,12 +19,15 @@
 		  <div class="flex">
 			<img src="https://gluu.org/wp-content/uploads/2020/12/logo.png">
 		  </div>
-		  <p>You've successfully verify you VP</p><p>
-		</p></div>
+		  <p>You've successfully verify you VP
+		  </p>
+		  <p>
+		  </p>
+		</div>
 		<form method="post" id="myForm" class="my-8">
 		  <div class="space-y-9">
 			<div class="button">
-			  <button type="submit" class="btn">Ok</button>
+			  <button type="submit" class="btn">Continue</button>
 			</div>
 		  </div>
 		</form>
