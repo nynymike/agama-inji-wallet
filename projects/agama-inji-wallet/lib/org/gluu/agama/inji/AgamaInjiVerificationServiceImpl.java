@@ -209,15 +209,16 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     "&client_id_scheme=pre-registered" +
                     "&presentation_definition=" + URLEncoder.encode(presentationDefinitionJson, StandardCharsets.UTF_8) +
                     "&nonce=" + URLEncoder.encode(nonce, StandardCharsets.UTF_8) +
-                    "&response_uri=" + URLEncoder.encode(this.AUTHORIZATION_DETAILS.get("responseUri"), StandardCharsets.UTF_8) +
+                    "&response_uri=" + URLEncoder.encode((String) this.AUTHORIZATION_DETAILS.get("responseUri"), StandardCharsets.UTF_8) +
+                    "&redirect_uri=" + URLEncoder.encode(this.CALLBACK_URL, StandardCharsets.UTF_8) +
                     "&response_type=" +this.AUTHORIZATION_DETAILS.get("responseType")  +
                     "&response_mode=" + this.AUTHORIZATION_DETAILS.get("responseMode") +
                     "&state=" + URLEncoder.encode(requestId, StandardCharsets.UTF_8) +
                     "&client_metadata=" + URLEncoder.encode(clientMetadataJson, StandardCharsets.UTF_8);
 
             LogUtils.log("URL : %", url);
-            // return url;
-            return RFAC_DEMO_BASE;
+            return url;
+            // return RFAC_DEMO_BASE;
 
         } catch (Exception e) {
             LogUtils.log("ERROR: Failed to build Inji Web Authorization URL: %", e.getMessage());
@@ -234,24 +235,24 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         LogUtils.log("Data : %", resultFromApp);
 
-        APP_USER_MAIL = resultFromApp.get("email");
-        APP_USER_NAME = resultFromApp.get("name");
+        // APP_USER_MAIL = resultFromApp.get("email");
+        // APP_USER_NAME = resultFromApp.get("name");
 
-        // String requestIdStatus = checkRequestIdStatus(requestId);
+        String requestIdStatus = checkRequestIdStatus(requestId);
 
-        // if (!"VP_SUBMITTED".equals(requestIdStatus)) {
-        //     response.put("valid", false);
-        //     response.put("message", "Error: VP REQUEST ID STATUS is " + requestIdStatus);
-        //     return response;
-        // }
+        if (!"VP_SUBMITTED".equals(requestIdStatus)) {
+            response.put("valid", false);
+            response.put("message", "Error: VP REQUEST ID STATUS is " + requestIdStatus);
+            return response;
+        }
 
-        // String transactionIdStatus = checkTransactionIdStatus(transactionId);
+        String transactionIdStatus = checkTransactionIdStatus(transactionId);
 
-        // if (!"SUCCESS".equals(transactionIdStatus)) {
-        //     response.put("valid", false);
-        //     response.put("message", "Error: No VP submission found for given transaction ID " + transactionIdStatus);
-        //     return response;
-        // }
+        if (!"SUCCESS".equals(transactionIdStatus)) {
+            response.put("valid", false);
+            response.put("message", "Error: No VP submission found for given transaction ID " + transactionIdStatus);
+            return response;
+        }
 
         response.put("valid", true);
         response.put("message", "VP TOKEN Verification successful");
@@ -514,7 +515,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         }
 
         LogUtils.log("No user info found from VC");
-        return addAsNewUser(APP_USER_MAIL, DISPLAY_NAME);
+        return null;
+        // return addAsNewUser(APP_USER_MAIL, DISPLAY_NAME);
     }
 
     private static User getUser(String attributeName, String value) {
