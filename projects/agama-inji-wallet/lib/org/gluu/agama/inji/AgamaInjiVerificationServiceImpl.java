@@ -206,13 +206,13 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             // LogUtils.log(clientMetadataJson);
             String url = baseUrl +
                     "?client_id=" + URLEncoder.encode(CLIENT_ID, StandardCharsets.UTF_8) +
-                    "&client_id_scheme=pre-registered" +
                     "&presentation_definition=" + URLEncoder.encode(presentationDefinitionJson, StandardCharsets.UTF_8) +
                     "&nonce=" + URLEncoder.encode(nonce, StandardCharsets.UTF_8) +
                     "&response_uri=" + URLEncoder.encode((String) this.AUTHORIZATION_DETAILS.get("responseUri"), StandardCharsets.UTF_8) +
                     "&redirect_uri=" + URLEncoder.encode(this.CALLBACK_URL, StandardCharsets.UTF_8) +
                     "&response_type=" +this.AUTHORIZATION_DETAILS.get("responseType")  +
                     "&response_mode=" + this.AUTHORIZATION_DETAILS.get("responseMode") +
+                    "&client_id_scheme=pre-registered" +
                     "&state=" + URLEncoder.encode(requestId, StandardCharsets.UTF_8) +
                     "&client_metadata=" + URLEncoder.encode(clientMetadataJson, StandardCharsets.UTF_8);
 
