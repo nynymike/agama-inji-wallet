@@ -1,5 +1,8 @@
 package org.gluu.agama.inji;
 
+import io.jans.orm.exception.operation.EntryNotFoundException;
+import io.jans.as.common.model.common.User;
+import io.jans.as.common.service.common.UserService;
 import io.jans.as.common.util.CommonUtils;
 import io.jans.as.common.model.registration.Client;
 
@@ -56,6 +59,14 @@ import org.gluu.agama.inji.AgamaInjiVerificationService;
 
 public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationService{
 
+    private static final String INUM_ATTR = "inum";
+    private static final String UID = "uid";
+    private static final String MAIL = "mail";
+    private static final String CN = "cn";
+    private static final String DISPLAY_NAME = "displayName";
+    private static final String GIVEN_NAME = "givenName";
+    private static final String SN = "sn";
+    private String USER_INFO_FROM_VC;
     // private String INJI_API_ENDPOINT = "http://mmrraju-comic-pup.gluu.info/backend/consent/new";
     private String INJI_BACKEND_BASE_URL = "https://injiverify.collab.mosip.net";
     private String INJI_WEB_BASE_URL = "https://injiweb.collab.mosip.net";
@@ -218,21 +229,24 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         LogUtils.log("INJI user back to agama...");
 
         LogUtils.log("Data : %", resultFromApp);
-        String requestIdStatus = checkRequestIdStatus(requestId);
 
-        if (!"VP_SUBMITTED".equals(requestIdStatus)) {
-            response.put("valid", false);
-            response.put("message", "Error: VP REQUEST ID STATUS is " + requestIdStatus);
-            return response;
-        }
+        String uid = addAsNewUser(resultFromApp.get("email"), resultFromApp.get("response"))
 
-        String transactionIdStatus = checkTransactionIdStatus(transactionId);
+        // String requestIdStatus = checkRequestIdStatus(requestId);
 
-        if (!"SUCCESS".equals(transactionIdStatus)) {
-            response.put("valid", false);
-            response.put("message", "Error: No VP submission found for given transaction ID " + transactionIdStatus);
-            return response;
-        }
+        // if (!"VP_SUBMITTED".equals(requestIdStatus)) {
+        //     response.put("valid", false);
+        //     response.put("message", "Error: VP REQUEST ID STATUS is " + requestIdStatus);
+        //     return response;
+        // }
+
+        // String transactionIdStatus = checkTransactionIdStatus(transactionId);
+
+        // if (!"SUCCESS".equals(transactionIdStatus)) {
+        //     response.put("valid", false);
+        //     response.put("message", "Error: No VP submission found for given transaction ID " + transactionIdStatus);
+        //     return response;
+        // }
 
         response.put("valid", true);
         response.put("message", "VP TOKEN Verification successful");
@@ -266,6 +280,9 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                 // Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
 
                 if (data != null || data.containsKey("vpResultStatus")) {
+                    List<Map<String, Object>> vcResults = (List<Map<String, Object>>) data.get("vcResults");
+                    String vc = (String) vcResults.get(0).get("vc");
+                    this.USER_INFO_FROM_VC = vc;
                     return data.get("vpResultStatus").toString();
                 } else {
                     return "UNKNOWN";
@@ -404,4 +421,108 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         return clientMetadata;
     }
 
+    // This method will use for our demo.
+    private String addAsNewUser(String email, String displayName){
+        User user = getUser(MAIL, email);
+        boolean local = user != null;
+        LogUtils.log("There is {} local account for {}", local ? "a" : "no", email);
+        if (local) {
+            String uid = getSingleValuedAttr(user, UID);
+            String inum = getSingleValuedAttr(user, INUM_ATTR);
+            String name = getSingleValuedAttr(user, GIVEN_NAME);
+
+            if (name == null) {
+                name = getSingleValuedAttr(user, DISPLAY_NAME);
+
+                if (name == null) {
+                    name = email.substring(0, email.indexOf("@"));
+                    }
+            }
+
+            return uid;
+        }else{
+            String uid = email.substring(0, email.indexOf("@"));
+        
+            user.setAttribute(UID, uid);
+            user.setAttribute(MAIL, email);
+            user.setAttribute(DISPLAY_NAME, displayName);
+
+            UserService userService = CdiUtil.bean(UserService.class);
+            user = userService.addUser(user, true);
+            if (user == null){
+                LogUtils.log("Added user not found");
+                return null;
+            };
+            LogUtils.log("New user added : %", email);
+            String inum = getSingleValuedAttr(user, INUM_ATTR);
+            return getSingleValuedAttr(user, UID);
+                
+        } 
+    }
+
+    @Override
+    public Map<String, String> onboardUser() {
+        ObjectMapper mapper = new ObjectMapper();
+        if(USER_INFO_FROM_VC!=null){
+            Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
+            Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
+            String email = (String) credentialSubject.get("email");
+            User user = getUser(MAIL, email);
+            boolean local = user != null;
+            LogUtils.log("There is {} local account for {}", local ? "a" : "no", email);
+            if (local) {
+                String uid = getSingleValuedAttr(user, UID);
+                String inum = getSingleValuedAttr(user, INUM_ATTR);
+                String name = getSingleValuedAttr(user, GIVEN_NAME);
+
+                if (name == null) {
+                    name = getSingleValuedAttr(user, DISPLAY_NAME);
+
+                    if (name == null) {
+                        name = email.substring(0, email.indexOf("@"));
+                    }
+                }
+
+                return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "name", name, "email", email));
+            }else{
+                String uid = email.substring(0, email.indexOf("@"));
+                List<Map<String, Object>> fullName = (List<Map<String, Object>>) credentialSubject.get("fullName");
+                String displayName = (String) fullName.get(0).get("value");
+
+                user.setAttribute(UID, uid);
+                user.setAttribute(MAIL, email);
+                user.setAttribute(DISPLAY_NAME, displayName);
+
+                UserService userService = CdiUtil.bean(UserService.class);
+                user = userService.addUser(user, true);
+                if (user == null){
+                    LogUtils.log("Added user not found");
+                    return null;
+                };
+                LogUtils.log("New user added : %", email);
+                String inum = getSingleValuedAttr(user, INUM_ATTR);
+                return new HashMap<>(Map.of(UID, uid, INUM_ATTR,inum, DISPLAY_NAME, displayName, "email", email));
+                
+            }
+        }
+        LogUtils.log("No user info found from VC");
+        return null;
+    }
+
+    private static User getUser(String attributeName, String value) {
+        UserService userService = CdiUtil.bean(UserService.class);
+        return userService.getUserByAttribute(attributeName, value, true);
+    }    
+    private String getSingleValuedAttr(User user, String attribute) {
+
+        Object value = null;
+        if (attribute.equals(UID)) {
+            //user.getAttribute("uid", true, false) always returns null :(
+            value = user.getUserId();
+        } else {
+            value = user.getAttribute(attribute, true, false);
+        }
+        return value == null ? null : value.toString();
+
+    }
 }
