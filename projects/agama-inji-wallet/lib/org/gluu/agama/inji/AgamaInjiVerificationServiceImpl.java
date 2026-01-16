@@ -79,7 +79,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     private String NONCE ;
     private String RESPONSE_URL ;
 
-    public static String CALLBACK_URL= "https://mmrraju-promoted-macaque.gluu.info/jans-auth/fl/callback"; // Agama call-back URL
+    public  String CALLBACK_URL= "https://mmrraju-promoted-macaque.gluu.info/jans-auth/fl/callback"; // Agama call-back URL
     private String RFAC_DEMO_BASE = "https://mmrraju-adapted-crab.gluu.info/inji-user.html"; // INJI RP URL.
     private HashMap<String, Object> flowConfig;
     private HashMap<String, Object> PRESENATION_DEFINITION;
@@ -125,7 +125,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             LogUtils.log(sessionAttrs);
             String clientId = sessionAttrs.get("client_id");
-            this.CLIENT_ID = clientId;
+            // this.CLIENT_ID = clientId;
             LogUtils.log("Create VP Verification Request...");
             Map<String, Object> requestPayload = new HashMap<>();
             requestPayload.put("clientId", CLIENT_ID);
