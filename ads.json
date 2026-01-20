@@ -22,7 +22,7 @@
                 "injiVerifyBaseURL": "https://injiverify.collab.mosip.net",
                 "agamaCallBackUrl": "https://mmrraju-promoted-macaque.gluu.info/jans-auth/fl/callback",
                 "clientId": "agama-app",
-                "vc_to_gluu_mapping": {
+                "vcToGluuMapping": {
                     "fullName": "displayName",
                     "phone": "mobile",
                     "gender": "gender",
