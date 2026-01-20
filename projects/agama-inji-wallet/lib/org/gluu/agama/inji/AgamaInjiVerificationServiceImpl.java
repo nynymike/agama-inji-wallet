@@ -14,19 +14,8 @@ import io.jans.service.cdi.util.CdiUtil;
 import io.jans.agama.engine.script.LogUtils;
 import io.jans.util.StringHelper;
 
-// import io.jans.as.model.config.WebKeysConfiguration;
-// import io.jans.as.model.configuration.AppConfiguration;
-// import io.jans.as.model.crypto.CryptoProviderFactory;
-// import io.jans.as.model.crypto.AbstractCryptoProvider;
-// import io.jans.as.model.crypto.signature.SignatureAlgorithm;
-
-// import io.jans.as.model.exception.CryptoProviderException;
 import io.jans.as.model.exception.InvalidJwtException;
 
-// import io.jans.as.model.jwk.JSONWebKey;
-// import io.jans.as.model.jwk.Use;
-// import io.jans.as.model.jwt.Jwt;
-// import io.jans.as.model.jwt.JwtHeader;
 import io.jans.service.cdi.util.CdiUtil;
 import io.jans.as.server.service.ClientService;
 
@@ -50,19 +39,12 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.io.*;
 
-// import com.nimbusds.jose.*;
-// import com.nimbusds.jose.crypto.RSASSASigner;
-// import com.nimbusds.jose.jwk.RSAKey;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.gluu.agama.inji.AgamaInjiVerificationService;
 
 public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationService{
 
-    //
-    private String APP_USER_MAIL;
-    private String APP_USER_NAME;
-    //
     private static final String INUM_ATTR = "inum";
     private static final String UID = "uid";
     private static final String MAIL = "mail";
@@ -81,7 +63,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
     public  String CALLBACK_URL= ""; // Agama call-back URL
     private String RFAC_DEMO_BASE = "https://mmrraju-adapted-crab.gluu.info/inji-user.html"; // INJI RP URL.
-    private HashMap<String, Object> flowConfig;
+    private HashMap<String, Object> flowConfig ;
     private HashMap<String, Object> PRESENATION_DEFINITION;
     private HashMap<String, Object> CLIENT_METADATA;
     private HashMap<String, String> VC_TO_GLUU_MAPPING; 
@@ -237,9 +219,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         LogUtils.log("Data : requestId : % transactionId : %", requestId, transactionId);
 
-        // APP_USER_MAIL = resultFromApp.get("email");
-        // APP_USER_NAME = resultFromApp.get("name");
-
         String requestIdStatus = checkRequestIdStatus(requestId);
 
         if (!"VP_SUBMITTED".equals(requestIdStatus)) {
@@ -353,15 +332,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         return sis.getSessionId(CdiUtil.bean(HttpServletRequest.class));
     }   
     
-    // private static String generateNonce(int length) {
-    //     SecureRandom rnd = new SecureRandom();
-    //     StringBuilder sb = new StringBuilder(length);
-    //     String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    //     for (int i = 0; i < length; i++) {
-    //         sb.append(chars.charAt(rnd.nextInt(chars.length())));
-    //     }
-    //     return sb.toString();
-    // }    
 
     private HashMap<String, Object> getPresentationDefinitionSample(){
 
@@ -428,46 +398,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         return clientMetadata;
     }
-
-    // This method will use for our demo.
-    // private Map<String, String> addAsNewUser(String email, String displayName){
-    //     User user = getUser(MAIL, email);
-    //     boolean local = user != null;
-    //     LogUtils.log("There is % local account for %", local ? "a" : "no", email);
-    //     if (local) {
-    //         String uid = getSingleValuedAttr(user, UID);
-    //         String inum = getSingleValuedAttr(user, INUM_ATTR);
-    //         String name = getSingleValuedAttr(user, GIVEN_NAME);
-
-    //         if (name == null) {
-    //             name = getSingleValuedAttr(user, DISPLAY_NAME);
-
-    //             if (name == null) {
-    //                 name = email.substring(0, email.indexOf("@"));
-    //                 }
-    //         }
-
-    //         return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "email", email));
-    //     }else{
-    //         User newUser = new User();
-    //         String uid = email.substring(0, email.indexOf("@"));
-        
-    //         newUser.setAttribute(UID, uid);
-    //         newUser.setAttribute(MAIL, email);
-    //         newUser.setAttribute(DISPLAY_NAME, displayName);
-
-    //         UserService userService = CdiUtil.bean(UserService.class);
-    //         newUser = userService.addUser(newUser, true);
-    //         if (newUser == null){
-    //             LogUtils.log("Added user not found");
-    //             return null;
-    //         };
-    //         LogUtils.log("New user added : %", email);
-    //         String inum = getSingleValuedAttr(newUser, INUM_ATTR);
-    //         return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "email", email));
-                
-    //     } 
-    // }
 
     public Map<String, String> jansPersonAttributes() {
 
@@ -563,13 +493,11 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             String attrName = entry.getKey();
             String attrValue = entry.getValue();
 
-            // Skip UID because we already set it
             if (UID.equals(attrName)) continue;
 
             newUser.setAttribute(attrName, attrValue);
         }
 
-        // Add user via UserService
         UserService userService = CdiUtil.bean(UserService.class);
         newUser = userService.addUser(newUser, true);
 
@@ -580,71 +508,14 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         LogUtils.log("New user added: %", email);
 
-        // Fetch inum
         String inum = getSingleValuedAttr(newUser, INUM_ATTR);
 
-        // Return created attributes
         Map<String, String> result = new HashMap<>(gluuAttrs);
         result.put(UID, uid);
         result.put(INUM_ATTR, inum);
 
         return result;
     }
-    // public Map<String, String> onboardUser() {
-    //     ObjectMapper mapper = new ObjectMapper();
-    //     Map<String, String> gluuAttrs = jansPersonAttributes();
-    //     LogUtils.log("VC registration claims: %", gluuAttrs);
-    //     if(gluuAttrs != null){
-    //         // Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
-    //         // Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
-
-    //         // String email = (String) credentialSubject.get("email");
-    //         String email = gluuAttrs.get("mail");
-    //         User user = getUser(MAIL, email);
-    //         boolean local = user != null;
-    //         LogUtils.log("There is % local account for %", local ? "a" : "no", email);
-    //         if (local) {
-    //             String uid = getSingleValuedAttr(user, UID);
-    //             String inum = getSingleValuedAttr(user, INUM_ATTR);
-    //             String name = getSingleValuedAttr(user, GIVEN_NAME);
-
-    //             if (name == null) {
-    //                 name = getSingleValuedAttr(user, DISPLAY_NAME);
-
-    //                 if (name == null) {
-    //                     name = email.substring(0, email.indexOf("@"));
-    //                 }
-    //             }
-
-    //             return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "name", name, "email", email));
-    //         }else{
-    //             User newUser = new User();
-    //             String uid = email.substring(0, email.indexOf("@"));
-    //             // List<Map<String, Object>> fullName = (List<Map<String, Object>>) credentialSubject.get("fullName");
-    //             // String displayName = (String) fullName.get(0).get("value");
-    //             String displayName = gluuAttrs.get("displayName");
-
-    //             newUser.setAttribute(UID, uid);
-    //             newUser.setAttribute(MAIL, email);
-    //             newUser.setAttribute(DISPLAY_NAME, displayName);
-
-    //             UserService userService = CdiUtil.bean(UserService.class);
-    //             newUser = userService.addUser(newUser, true);
-    //             if (newUser == null){
-    //                 LogUtils.log("Added user not found");
-    //                 return null;
-    //             };
-    //             LogUtils.log("New user added : %", email);
-    //             String inum = getSingleValuedAttr(newUser, INUM_ATTR);
-    //             return new HashMap<>(Map.of(UID, uid, INUM_ATTR,inum, DISPLAY_NAME, displayName, "email", email));
-                
-    //         }
-    //     }
-
-    //     LogUtils.log("Error: No user info found from VC");
-    //     return null;
-    //     // return addAsNewUser(APP_USER_MAIL, DISPLAY_NAME);
-    // }
 
     private String extractVcValue(Object vcValue) {
 
@@ -652,15 +523,10 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             return null;
         }
 
-        // Case 1: Already a string
         if (vcValue instanceof String) {
             return (String) vcValue;
         }
 
-        // Case 2: Localized value array
-        // [
-        //   { "language": "eng", "value": "Bal Deep" }
-        // ]
         if (vcValue instanceof List) {
             List<?> list = (List<?>) vcValue;
 
