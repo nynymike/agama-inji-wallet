@@ -469,14 +469,28 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     //     } 
     // }
 
-    public Map<String, String> jansPersonAttributes(){
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, String> gluuAttrs = null;
-        if(USER_INFO_FROM_VC!=null){
-            Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
-            Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
+    public Map<String, String> jansPersonAttributes() {
 
-            //
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, String> gluuAttrs = new HashMap<>();
+
+        if (USER_INFO_FROM_VC == null) {
+            LogUtils.log("Error: No user info found from VC");
+            return gluuAttrs;
+        }
+
+        try {
+            Map<String, Object> vcMap =
+                    mapper.readValue(USER_INFO_FROM_VC, Map.class);
+
+            Map<String, Object> credentialSubject =
+                    (Map<String, Object>) vcMap.get("credentialSubject");
+
+            if (credentialSubject == null) {
+                LogUtils.log("Error: credentialSubject missing in VC");
+                return gluuAttrs;
+            }
+
             for (Map.Entry<String, String> entry : VC_TO_GLUU_MAPPING.entrySet()) {
 
                 String vcClaimName = entry.getKey();
@@ -492,66 +506,145 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     }
                 }
             }
-        }
-        return gluuAttrs;
 
+        } catch (Exception e) {
+            LogUtils.log("Error parsing VC user info: %", e.getMessage());
+        }
+
+        return gluuAttrs;
     }
     @Override
     public Map<String, String> onboardUser() {
-        ObjectMapper mapper = new ObjectMapper();
+
         Map<String, String> gluuAttrs = jansPersonAttributes();
         LogUtils.log("VC registration claims: %", gluuAttrs);
-        if(gluuAttrs != null){
-            // Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
-            // Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
 
-            // String email = (String) credentialSubject.get("email");
-            String email = gluuAttrs.get("mail");
-            User user = getUser(MAIL, email);
-            boolean local = user != null;
-            LogUtils.log("There is % local account for %", local ? "a" : "no", email);
-            if (local) {
-                String uid = getSingleValuedAttr(user, UID);
-                String inum = getSingleValuedAttr(user, INUM_ATTR);
-                String name = getSingleValuedAttr(user, GIVEN_NAME);
-
-                if (name == null) {
-                    name = getSingleValuedAttr(user, DISPLAY_NAME);
-
-                    if (name == null) {
-                        name = email.substring(0, email.indexOf("@"));
-                    }
-                }
-
-                return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "name", name, "email", email));
-            }else{
-                User newUser = new User();
-                String uid = email.substring(0, email.indexOf("@"));
-                // List<Map<String, Object>> fullName = (List<Map<String, Object>>) credentialSubject.get("fullName");
-                // String displayName = (String) fullName.get(0).get("value");
-                String displayName = gluuAttrs.get("displayName");
-
-                newUser.setAttribute(UID, uid);
-                newUser.setAttribute(MAIL, email);
-                newUser.setAttribute(DISPLAY_NAME, displayName);
-
-                UserService userService = CdiUtil.bean(UserService.class);
-                newUser = userService.addUser(newUser, true);
-                if (newUser == null){
-                    LogUtils.log("Added user not found");
-                    return null;
-                };
-                LogUtils.log("New user added : %", email);
-                String inum = getSingleValuedAttr(newUser, INUM_ATTR);
-                return new HashMap<>(Map.of(UID, uid, INUM_ATTR,inum, DISPLAY_NAME, displayName, "email", email));
-                
-            }
+        if (gluuAttrs.isEmpty()) {
+            LogUtils.log("Error: No mapped attributes from VC");
+            return Collections.emptyMap();
         }
 
-        LogUtils.log("Error: No user info found from VC");
-        return null;
-        // return addAsNewUser(APP_USER_MAIL, DISPLAY_NAME);
+        String email = gluuAttrs.get("mail");
+        if (email == null || !email.contains("@")) {
+            LogUtils.log("Error: Email missing or invalid in VC");
+            return Collections.emptyMap();
+        }
+
+        User user = getUser(MAIL, email);
+        boolean local = user != null;
+
+        LogUtils.log("There is % local account for %", local ? "a" : "no", email);
+
+        if (local) {
+            String uid = getSingleValuedAttr(user, UID);
+            String inum = getSingleValuedAttr(user, INUM_ATTR);
+
+            String name = getSingleValuedAttr(user, GIVEN_NAME);
+            if (name == null) {
+                name = getSingleValuedAttr(user, DISPLAY_NAME);
+                if (name == null) {
+                    name = email.substring(0, email.indexOf("@"));
+                }
+            }
+
+            return Map.of(
+                UID, uid,
+                INUM_ATTR, inum,
+                "name", name,
+                "email", email
+            );
+        }
+
+        User newUser = new User();
+        String uid = email.substring(0, email.indexOf("@"));
+
+        // Set all attributes from gluuAttrs dynamically
+        for (Map.Entry<String, String> entry : gluuAttrs.entrySet()) {
+            String attrName = entry.getKey();
+            String attrValue = entry.getValue();
+
+            // Skip UID because we already set it
+            if (UID.equals(attrName)) continue;
+
+            newUser.setAttribute(attrName, attrValue);
+        }
+
+        // Add user via UserService
+        UserService userService = CdiUtil.bean(UserService.class);
+        newUser = userService.addUser(newUser, true);
+
+        if (newUser == null) {
+            LogUtils.log("Error: Added user not found");
+            return Collections.emptyMap();
+        }
+
+        LogUtils.log("New user added: %", email);
+
+        // Fetch inum
+        String inum = getSingleValuedAttr(newUser, INUM_ATTR);
+
+        // Return created attributes
+        Map<String, String> result = new HashMap<>(gluuAttrs);
+        result.put(UID, uid);
+        result.put(INUM_ATTR, inum);
+
+        return result;
     }
+    // public Map<String, String> onboardUser() {
+    //     ObjectMapper mapper = new ObjectMapper();
+    //     Map<String, String> gluuAttrs = jansPersonAttributes();
+    //     LogUtils.log("VC registration claims: %", gluuAttrs);
+    //     if(gluuAttrs != null){
+    //         // Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
+    //         // Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
+
+    //         // String email = (String) credentialSubject.get("email");
+    //         String email = gluuAttrs.get("mail");
+    //         User user = getUser(MAIL, email);
+    //         boolean local = user != null;
+    //         LogUtils.log("There is % local account for %", local ? "a" : "no", email);
+    //         if (local) {
+    //             String uid = getSingleValuedAttr(user, UID);
+    //             String inum = getSingleValuedAttr(user, INUM_ATTR);
+    //             String name = getSingleValuedAttr(user, GIVEN_NAME);
+
+    //             if (name == null) {
+    //                 name = getSingleValuedAttr(user, DISPLAY_NAME);
+
+    //                 if (name == null) {
+    //                     name = email.substring(0, email.indexOf("@"));
+    //                 }
+    //             }
+
+    //             return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "name", name, "email", email));
+    //         }else{
+    //             User newUser = new User();
+    //             String uid = email.substring(0, email.indexOf("@"));
+    //             // List<Map<String, Object>> fullName = (List<Map<String, Object>>) credentialSubject.get("fullName");
+    //             // String displayName = (String) fullName.get(0).get("value");
+    //             String displayName = gluuAttrs.get("displayName");
+
+    //             newUser.setAttribute(UID, uid);
+    //             newUser.setAttribute(MAIL, email);
+    //             newUser.setAttribute(DISPLAY_NAME, displayName);
+
+    //             UserService userService = CdiUtil.bean(UserService.class);
+    //             newUser = userService.addUser(newUser, true);
+    //             if (newUser == null){
+    //                 LogUtils.log("Added user not found");
+    //                 return null;
+    //             };
+    //             LogUtils.log("New user added : %", email);
+    //             String inum = getSingleValuedAttr(newUser, INUM_ATTR);
+    //             return new HashMap<>(Map.of(UID, uid, INUM_ATTR,inum, DISPLAY_NAME, displayName, "email", email));
+                
+    //         }
+    //     }
+
+    //     LogUtils.log("Error: No user info found from VC");
+    //     return null;
+    //     // return addAsNewUser(APP_USER_MAIL, DISPLAY_NAME);
+    // }
 
     private String extractVcValue(Object vcValue) {
 
