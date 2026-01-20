@@ -127,7 +127,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             LogUtils.log(sessionAttrs);
             String clientId = sessionAttrs.get("client_id");
-            // this.CLIENT_ID = clientId;
+            this.CLIENT_ID = clientId;
             LogUtils.log("Create VP Verification Request...");
             Map<String, Object> requestPayload = new HashMap<>();
             requestPayload.put("clientId", CLIENT_ID);
