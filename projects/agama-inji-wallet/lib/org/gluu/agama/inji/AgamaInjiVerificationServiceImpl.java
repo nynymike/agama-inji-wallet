@@ -430,52 +430,83 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     }
 
     // This method will use for our demo.
-    private Map<String, String> addAsNewUser(String email, String displayName){
-        User user = getUser(MAIL, email);
-        boolean local = user != null;
-        LogUtils.log("There is % local account for %", local ? "a" : "no", email);
-        if (local) {
-            String uid = getSingleValuedAttr(user, UID);
-            String inum = getSingleValuedAttr(user, INUM_ATTR);
-            String name = getSingleValuedAttr(user, GIVEN_NAME);
+    // private Map<String, String> addAsNewUser(String email, String displayName){
+    //     User user = getUser(MAIL, email);
+    //     boolean local = user != null;
+    //     LogUtils.log("There is % local account for %", local ? "a" : "no", email);
+    //     if (local) {
+    //         String uid = getSingleValuedAttr(user, UID);
+    //         String inum = getSingleValuedAttr(user, INUM_ATTR);
+    //         String name = getSingleValuedAttr(user, GIVEN_NAME);
 
-            if (name == null) {
-                name = getSingleValuedAttr(user, DISPLAY_NAME);
+    //         if (name == null) {
+    //             name = getSingleValuedAttr(user, DISPLAY_NAME);
 
-                if (name == null) {
-                    name = email.substring(0, email.indexOf("@"));
-                    }
-            }
+    //             if (name == null) {
+    //                 name = email.substring(0, email.indexOf("@"));
+    //                 }
+    //         }
 
-            return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "email", email));
-        }else{
-            User newUser = new User();
-            String uid = email.substring(0, email.indexOf("@"));
+    //         return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "email", email));
+    //     }else{
+    //         User newUser = new User();
+    //         String uid = email.substring(0, email.indexOf("@"));
         
-            newUser.setAttribute(UID, uid);
-            newUser.setAttribute(MAIL, email);
-            newUser.setAttribute(DISPLAY_NAME, displayName);
+    //         newUser.setAttribute(UID, uid);
+    //         newUser.setAttribute(MAIL, email);
+    //         newUser.setAttribute(DISPLAY_NAME, displayName);
 
-            UserService userService = CdiUtil.bean(UserService.class);
-            newUser = userService.addUser(newUser, true);
-            if (newUser == null){
-                LogUtils.log("Added user not found");
-                return null;
-            };
-            LogUtils.log("New user added : %", email);
-            String inum = getSingleValuedAttr(newUser, INUM_ATTR);
-            return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "email", email));
+    //         UserService userService = CdiUtil.bean(UserService.class);
+    //         newUser = userService.addUser(newUser, true);
+    //         if (newUser == null){
+    //             LogUtils.log("Added user not found");
+    //             return null;
+    //         };
+    //         LogUtils.log("New user added : %", email);
+    //         String inum = getSingleValuedAttr(newUser, INUM_ATTR);
+    //         return new HashMap<>(Map.of(UID, uid, INUM_ATTR, inum, "email", email));
                 
-        } 
-    }
+    //     } 
+    // }
 
-    @Override
-    public Map<String, String> onboardUser() {
+    public Map<String, String> jansPersonAttributes(){
         ObjectMapper mapper = new ObjectMapper();
+        Map<String, String> gluuAttrs = null;
         if(USER_INFO_FROM_VC!=null){
             Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
             Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
-            String email = (String) credentialSubject.get("email");
+
+            //
+            for (Map.Entry<String, String> entry : VC_TO_GLUU_MAPPING.entrySet()) {
+
+                String vcClaimName = entry.getKey();
+                String gluuAttrName = entry.getValue();
+
+                if (credentialSubject.containsKey(vcClaimName)) {
+
+                    Object vcValue = credentialSubject.get(vcClaimName);
+                    String normalizedValue = extractVcValue(vcValue);
+
+                    if (normalizedValue != null) {
+                        gluuAttrs.put(gluuAttrName, normalizedValue);
+                    }
+                }
+            }
+        }
+        return gluuAttrs;
+
+    }
+    @Override
+    public Map<String, String> onboardUser() {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, String> gluuAttrs = jansPersonAttributes();
+        LogUtils.log("VC registration claims: %", gluuAttrs);
+        if(gluuAttrs != null){
+            // Map<String, Object> vcMap = mapper.readValue(this.USER_INFO_FROM_VC, Map.class);
+            // Map<String, Object> credentialSubject = (Map<String, Object>) vcMap.get("credentialSubject");
+
+            // String email = (String) credentialSubject.get("email");
+            String email = gluuAttrs.get("mail");
             User user = getUser(MAIL, email);
             boolean local = user != null;
             LogUtils.log("There is % local account for %", local ? "a" : "no", email);
@@ -496,8 +527,9 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             }else{
                 User newUser = new User();
                 String uid = email.substring(0, email.indexOf("@"));
-                List<Map<String, Object>> fullName = (List<Map<String, Object>>) credentialSubject.get("fullName");
-                String displayName = (String) fullName.get(0).get("value");
+                // List<Map<String, Object>> fullName = (List<Map<String, Object>>) credentialSubject.get("fullName");
+                // String displayName = (String) fullName.get(0).get("value");
+                String displayName = gluuAttrs.get("displayName");
 
                 newUser.setAttribute(UID, uid);
                 newUser.setAttribute(MAIL, email);
@@ -519,6 +551,39 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         LogUtils.log("Error: No user info found from VC");
         return null;
         // return addAsNewUser(APP_USER_MAIL, DISPLAY_NAME);
+    }
+
+    private String extractVcValue(Object vcValue) {
+
+        if (vcValue == null) {
+            return null;
+        }
+
+        // Case 1: Already a string
+        if (vcValue instanceof String) {
+            return (String) vcValue;
+        }
+
+        // Case 2: Localized value array
+        // [
+        //   { "language": "eng", "value": "Bal Deep" }
+        // ]
+        if (vcValue instanceof List) {
+            List<?> list = (List<?>) vcValue;
+
+            if (!list.isEmpty() && list.get(0) instanceof Map) {
+                Map<String, Object> obj =
+                        (Map<String, Object>) list.get(0);
+
+                Object value = obj.get("value");
+                if (value != null) {
+                    return value.toString();
+                }
+            }
+        }
+
+        // Case 3: Fallback
+        return vcValue.toString();
     }
 
     private static User getUser(String attributeName, String value) {
