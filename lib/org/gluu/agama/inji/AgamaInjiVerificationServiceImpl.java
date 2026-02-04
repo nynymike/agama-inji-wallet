@@ -493,6 +493,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             result.put(INUM_ATTR, inum);
             result.put(MAIL, email);
             result.put(DISPLAY_NAME, displayName);
+            result.put(GIVEN_NAME, givenName);
             return result;
 
         }else{
@@ -514,7 +515,9 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                 }
                 
             }
-
+            if(gluuAttrs.get(DISPLAY_NAME) != null) {
+                newUser.setAttribute(GIVEN_NAME, gluuAttrs.get(DISPLAY_NAME));
+            }
             UserService userService = CdiUtil.bean(UserService.class);
             newUser = userService.addUser(newUser, true);
 
@@ -526,10 +529,12 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             LogUtils.log("New user added: %", email);
         
             String inum = getSingleValuedAttr(newUser, INUM_ATTR);
+            String firstName = getSingleValuedAttr(newUser, GIVEN_NAME);
 
             Map<String, String> result = new HashMap<>(gluuAttrs);
             result.put(UID, uid);
             result.put(INUM_ATTR, inum);
+            result.put(GIVEN_NAME, firstName);
             return result;
         }
     }
