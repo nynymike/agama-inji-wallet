@@ -1,10 +1,79 @@
+[#ftl output_format="HTML"]
 <!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete Your Profile</title>
-    <style>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Complete Your Profile</title></head>
+<body>
+
+
+    
+    
+    
+    
+
+
+    <div class="container">
+        <h1>Complete Your Registration</h1>
+        <p class="subtitle">Review your verified NID information and set a password</p>
+        
+        <div class="info-box">
+            <p>Your information has been verified from your National ID credential. Please review and set a password to complete registration.</p>
+        </div>
+
+        <form id="setupForm" method="post">
+            <div class="form-group">
+                <label for="displayName">Full Name</label>
+                <input type="text" id="displayName" name="displayName" value="${vcUserInfo.displayName!''}" readonly="">
+            </div>
+
+            <div class="form-group">
+                <label for="mail">Email</label>
+                <input type="email" id="mail" name="mail" value="${vcUserInfo.mail!''}" readonly="">
+            </div>
+
+            &lt;#if vcUserInfo.mobile?? &amp;&amp; vcUserInfo.mobile != ''&gt;
+            <div class="form-group">
+                <label for="mobile">Phone Number</label>
+                <input type="tel" id="mobile" name="mobile" value="${vcUserInfo.mobile}" readonly="">
+            </div>
+            <!--#if-->
+
+            &lt;#if vcUserInfo.gender?? &amp;&amp; vcUserInfo.gender != ''&gt;
+            <div class="form-group">
+                <label for="gender">Gender</label>
+                <input type="text" id="gender" name="gender" value="${vcUserInfo.gender}" readonly="">
+            </div>
+            <!--#if-->
+
+            &lt;#if vcUserInfo.birthdate?? &amp;&amp; vcUserInfo.birthdate != ''&gt;
+            <div class="form-group">
+                <label for="birthdate">Date of Birth</label>
+                <input type="text" id="birthdate" name="birthdate" value="${vcUserInfo.birthdate}" readonly="">
+            </div>
+            <!--#if-->
+
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+            <div class="form-group">
+                <label for="password">Password <span class="required">*</span></label>
+                <input type="password" id="password" name="password" required="">
+                <p class="password-requirements">Minimum 8 characters, include uppercase, lowercase, and number</p>
+                <p class="error" id="passwordError">Password does not meet requirements</p>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required="">
+                <p class="error" id="confirmError">Passwords do not match</p>
+            </div>
+
+            <button type="submit" class="btn">Complete Setup</button>
+        </form>
+    </div>
+
+    
+
+</body>
+<style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: #f5f5f5; padding: 20px; }
         .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 40px; }
@@ -23,68 +92,7 @@
         .info-box { background: #e3f2fd; border-left: 4px solid #2196F3; padding: 15px; margin-bottom: 25px; border-radius: 4px; }
         .info-box p { color: #1976D2; font-size: 14px; }
     </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Complete Your Registration</h1>
-        <p class="subtitle">Review your verified NID information and set a password</p>
-        
-        <div class="info-box">
-            <p>Your information has been verified from your National ID credential. Please review and set a password to complete registration.</p>
-        </div>
-
-        <form id="setupForm" method="post">
-            <div class="form-group">
-                <label for="displayName">Full Name</label>
-                <input type="text" id="displayName" name="displayName" value="${userInfo.displayName!''}" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="mail">Email</label>
-                <input type="email" id="mail" name="mail" value="${userInfo.mail!''}" readonly>
-            </div>
-
-            <#if userInfo.mobile?? && userInfo.mobile != ''>
-            <div class="form-group">
-                <label for="mobile">Phone Number</label>
-                <input type="tel" id="mobile" name="mobile" value="${userInfo.mobile}" readonly>
-            </div>
-            </#if>
-
-            <#if userInfo.gender?? && userInfo.gender != ''>
-            <div class="form-group">
-                <label for="gender">Gender</label>
-                <input type="text" id="gender" name="gender" value="${userInfo.gender}" readonly>
-            </div>
-            </#if>
-
-            <#if userInfo.birthdate?? && userInfo.birthdate != ''>
-            <div class="form-group">
-                <label for="birthdate">Date of Birth</label>
-                <input type="text" id="birthdate" name="birthdate" value="${userInfo.birthdate}" readonly>
-            </div>
-            </#if>
-
-            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-
-            <div class="form-group">
-                <label for="password">Password <span class="required">*</span></label>
-                <input type="password" id="password" name="password" required>
-                <p class="password-requirements">Minimum 8 characters, include uppercase, lowercase, and number</p>
-                <p class="error" id="passwordError">Password does not meet requirements</p>
-            </div>
-
-            <div class="form-group">
-                <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
-                <input type="password" id="confirmPassword" name="confirmPassword" required>
-                <p class="error" id="confirmError">Passwords do not match</p>
-            </div>
-
-            <button type="submit" class="btn">Complete Setup</button>
-        </form>
-    </div>
-
-    <script>
+<script>
         const form = document.getElementById('setupForm');
         const password = document.getElementById('password');
         const confirmPassword = document.getElementById('confirmPassword');
@@ -118,5 +126,4 @@
             }
         });
     </script>
-</body>
 </html>
