@@ -405,8 +405,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         return clientMetadata;
     }
 
-    public Map<String, String> jansPersonAttributes() {
-
+    @Override
+    public Map<String, String> extractUserInfoFromVC() {
         ObjectMapper mapper = new ObjectMapper();
         Map<String, String> gluuAttrs = new HashMap<>();
 
@@ -439,11 +439,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
                     if (normalizedValue != null) {
                         gluuAttrs.put(gluuAttrName, normalizedValue);
-                        // if ("birthdate".equals(gluuAttrName)) {
-                        //     gluuAttrs.put(gluuAttrName, parseBirthdate(normalizedValue));
-                        // } else {
-                        //     gluuAttrs.put(gluuAttrName, normalizedValue);
-                        // }
                     }
                 }
             }
@@ -454,85 +449,117 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         return gluuAttrs;
     }
-    @Override
-    public Map<String, String> onboardUser() {
 
-        Map<String, String> gluuAttrs = jansPersonAttributes();
-        LogUtils.log("VC registration claims: %", gluuAttrs);
+    @Override
+    public Map<String, String> checkUserExists(String email) {
+        if (email == null || !email.contains("@")) {
+            LogUtils.log("Error: Invalid email provided");
+            return null;
+        }
+
+        User user = getUser(MAIL, email);
+        
+        if (user == null) {
+            LogUtils.log("No existing user found for email: %", email);
+            return null;
+        }
+
+        LogUtils.log("Found existing user for email: %", email);
+        
+        String uid = getSingleValuedAttr(user, UID);
+        String inum = getSingleValuedAttr(user, INUM_ATTR);
+        String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
+        String givenName = getSingleValuedAttr(user, GIVEN_NAME);
+        
+        if (givenName == null) {
+            givenName = displayName;
+            if (givenName == null) {
+                givenName = email.substring(0, email.indexOf("@"));
+            }
+        }
+        
+        Map<String, String> result = new HashMap<>();
+        result.put(UID, uid);
+        result.put(INUM_ATTR, inum);
+        result.put(MAIL, email);
+        result.put(DISPLAY_NAME, displayName);
+        result.put(GIVEN_NAME, givenName);
+        
+        return result;
+    }
+
+    @Override
+    public Map<String, String> onboardUser(Map<String, String> userInfo, String password) {
+
+        Map<String, String> gluuAttrs = userInfo;
+        LogUtils.log("User registration data: %", gluuAttrs);
 
         if (gluuAttrs.isEmpty()) {
-            LogUtils.log("Error: No mapped attributes from VC");
+            LogUtils.log("Error: No user data provided");
             return Collections.emptyMap();
         }
 
         String email = gluuAttrs.get("mail");
         if (email == null || !email.contains("@")) {
-            LogUtils.log("Error: Email missing or invalid in VC");
+            LogUtils.log("Error: Email missing or invalid");
             return Collections.emptyMap();
         }
 
-        User user = getUser(MAIL, email);
-        boolean local = user != null;
+        if (password == null || password.isEmpty()) {
+            LogUtils.log("Error: Password is required");
+            return Collections.emptyMap();
+        }
 
-        LogUtils.log("There is % local account for %", local ? "a" : "no", email);
+        User newUser = new User();
+        String uid = email;  // Use full email as UID
+        newUser.setAttribute(UID, uid);
+        
+        // Set password
+        newUser.setAttribute("userPassword", password);
+        
+        // Set all attributes from gluuAttrs dynamically
+        for (Map.Entry<String, String> entry : gluuAttrs.entrySet()) {
+            String attrName = entry.getKey();
+            String attrValue = entry.getValue();
 
-        if (local) {
-            String uid = getSingleValuedAttr(user, UID);
-            String inum = getSingleValuedAttr(user, INUM_ATTR);
-
-            String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
-            String givenName = getSingleValuedAttr(user, GIVEN_NAME);
-            if (givenName == null) {
-                givenName = displayName;
-                if (givenName == null) {
-                    givenName = email.substring(0, email.indexOf("@"));
-                }
-            }
-            Map<String, String> result = new HashMap<>(gluuAttrs);
-            result.put(UID, uid);
-            result.put(INUM_ATTR, inum);
-            result.put(MAIL, email);
-            result.put(DISPLAY_NAME, displayName);
-            return result;
-
-        }else{
-            User newUser = new User();
-            String uid = email.substring(0, email.indexOf("@"));
-            newUser.setAttribute(UID, uid);
-            // Set all attributes from gluuAttrs dynamically
-            for (Map.Entry<String, String> entry : gluuAttrs.entrySet()) {
-                String attrName = entry.getKey();
-                String attrValue = entry.getValue();
-
-                if (UID.equals(attrName)) continue;
-                if("birthdate".equals(attrName)){
-                    LocalDate localDate = LocalDate.parse(attrValue.replace('/', '-')); // parses yyyy-MM-dd
+            if (UID.equals(attrName)) continue;
+            if ("birthdate".equals(attrName)) {
+                try {
+                    LocalDate localDate = LocalDate.parse(attrValue.replace('/', '-'));
                     LocalDateTime localDateTime = localDate.atStartOfDay();
                     newUser.setAttribute(attrName, Timestamp.valueOf(localDateTime));
-                }else{
-                    newUser.setAttribute(attrName, attrValue);
+                } catch (DateTimeParseException e) {
+                    LogUtils.log("Warning: Invalid birthdate format: %", attrValue);
                 }
-                
+            } else {
+                newUser.setAttribute(attrName, attrValue);
             }
-
-            UserService userService = CdiUtil.bean(UserService.class);
-            newUser = userService.addUser(newUser, true);
-
-            if (newUser == null) {
-                LogUtils.log("Error: Added user not found");
-                return Collections.emptyMap();
-            }
-
-            LogUtils.log("New user added: %", email);
-        
-            String inum = getSingleValuedAttr(newUser, INUM_ATTR);
-
-            Map<String, String> result = new HashMap<>(gluuAttrs);
-            result.put(UID, uid);
-            result.put(INUM_ATTR, inum);
-            return result;
         }
+        
+        if (gluuAttrs.get(DISPLAY_NAME) != null) {
+            newUser.setAttribute(GIVEN_NAME, gluuAttrs.get(DISPLAY_NAME));
+        }
+        
+        UserService userService = CdiUtil.bean(UserService.class);
+        newUser = userService.addUser(newUser, true);
+
+        if (newUser == null) {
+            LogUtils.log("Error: Failed to add user");
+            return Collections.emptyMap();
+        }
+
+        LogUtils.log("New user added with password: %", email);
+    
+        String inum = getSingleValuedAttr(newUser, INUM_ATTR);
+        String firstName = getSingleValuedAttr(newUser, GIVEN_NAME);
+
+        Map<String, String> result = new HashMap<>(gluuAttrs);
+        result.put(UID, uid);
+        result.put(INUM_ATTR, inum);
+        result.put(GIVEN_NAME, firstName);
+        return result;
     }
+    
 
     private String extractVcValue(Object vcValue) {
 
