@@ -559,7 +559,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         result.put(GIVEN_NAME, firstName);
         return result;
     }
-    }
+    
 
     private String extractVcValue(Object vcValue) {
 
