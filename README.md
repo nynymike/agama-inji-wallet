@@ -9,7 +9,7 @@
 
 ## Overview
 
-Agama-Inji-Wallet is an authentication flow project that integrates [MOSIP Inji Wallet](https://docs.mosip.io/inji) with Janssen authentication server. This project enables users to authenticate and register using verifiable credentials from their Inji digital wallet, specifically National ID (NID) credentials.
+Agama-Inji-Wallet is an authentication flow project that integrates [MOSIP Inji Wallet](https://injiweb.collab.mosip.net/) with Janssen authentication server. This project enables users to authenticate and register using verifiable credentials from their Inji digital wallet, specifically National ID (NID) credentials
 
 The flow validates credentials through the Inji Verify backend, extracts user information from the verified credential, and creates user accounts in the Janssen server with password setup.
 
