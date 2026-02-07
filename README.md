@@ -18,8 +18,13 @@ The flow validates credentials through the Inji Verify backend, extracts user in
 - **Verifiable Credential Authentication**: Validates NID credentials from MOSIP Inji Wallet
 - **OpenID4VP Integration**: Uses OpenID for Verifiable Presentations protocol
 - **User Onboarding**: Automatically creates user accounts from verified credential data
+- **Verifiable Credentials Storage**: Stores complete verifiable credentials as JSONB in database
+- **Intelligent Credential Type Detection**: Automatically identifies credential types (NID, TAX, etc.) based on content
+- **Credential Merging**: Supports adding multiple credential types to existing users
+- **Editable User Information**: Users can review and edit verified information before registration
 - **Password Setup**: Allows users to set passwords during first-time registration
 - **Existing User Detection**: Recognizes returning users and logs them in directly
+- **Credential Management**: Remove specific credential types while preserving others
 - **Extensible Credential Support**: Architecture supports multiple credential types (NID, TAX info, etc.)
 - **Configurable Attribute Mapping**: Maps credential claims to Janssen user attributes
 
@@ -30,12 +35,13 @@ The flow validates credentials through the Inji Verify backend, extracts user in
 3. **RFAC Call**: Redirects user to Inji Web wallet application
 4. **Credential Presentation**: User presents their NID credential from wallet
 5. **Verification**: Backend validates the credential and transaction
-6. **User Check**: System checks if user already exists by email
-   - **Existing User**: Logs in directly
-   - **New User**: Shows setup page
-7. **Profile Setup**: New users review NID data and set password
-8. **Account Creation**: User account created with verified information
-9. **Authentication Complete**: User logged into Janssen
+6. **Credential Storage**: System stores complete verifiable credentials in JSONB format
+7. **User Check**: System checks if user already exists by email
+   - **Existing User**: Merges new credentials with existing ones, logs in directly
+   - **New User**: Shows setup page with editable fields
+8. **Profile Setup**: New users review NID data, can edit fields, and set password
+9. **Account Creation**: User account created with verified information and stored credentials
+10. **Authentication Complete**: User logged into Janssen
 
 ## Where To Deploy
 
@@ -132,24 +138,6 @@ Defines the credential requirements for verification:
 }
 ```
 
-
-### User Experience
-
-**New User Flow:**
-1. User clicks "Login with Inji Wallet"
-2. Redirected to Inji Web wallet
-3. Selects and presents NID credential
-4. Returns to Janssen
-5. Reviews NID information (read-only)
-6. Sets password
-7. Account created and logged in
-
-**Returning User Flow:**
-1. User clicks "Login with Inji Wallet"
-2. Redirected to Inji Web wallet
-3. Presents NID credential
-4. Automatically logged in (no password setup)
-
 ## Extending for Multiple Credential Types
 
 The project supports multiple credential types. To add TAX credential support:
@@ -178,6 +166,18 @@ The project supports multiple credential types. To add TAX credential support:
 
 Currently, the flow uses the first credential mapping (NID). Future enhancements can add credential type selection.
 
+## Verifiable Credentials Storage
+
+### Database Schema
+
+The project stores complete verifiable credentials in a JSONB column. Following [docs](https://docs.jans.io/head/janssen-server/reference/database/pgsql-ops/#add-custom-attribute)
+
+```sql
+ALTER TABLE "jansPerson" ADD COLUMN "verifiableCredentials" jsonb;
+```
+
+
+
 <!-- This are stats url reference for this repository -->
 [contributors-shield]: https://img.shields.io/github/contributors/GluuFederation/agama-inji-wallet.svg?style=for-the-badge
 [contributors-url]: https://github.com/GluuFederation/agama-inji-wallet/graphs/contributors
@@ -189,4 +189,3 @@ Currently, the flow uses the first credential mapping (NID). Future enhancements
 [issues-url]: https://github.com/GluuFederation/agama-inji-wallet/issues
 [license-shield]: https://img.shields.io/github/license/GluuFederation/agama-inji-wallet.svg?style=for-the-badge
 [license-url]: https://github.com/GluuFederation/agama-inji-wallet/blob/main/LICENSE
-
