@@ -16,10 +16,6 @@
 	  </h1>
 	  <p class="subtitle">Review your verified NID information and set a password
 	  </p>
-	  <div class="info-box">
-		<p>Your information has been verified from your National ID credential. You can edit the fields if needed before completing registration.
-		</p>
-	  </div>
 	  <form method="post" id="setupForm">
 		<div class="form-group view-mode">
 		  <label for="displayName">Full Name</label>
