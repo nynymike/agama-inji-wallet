@@ -170,14 +170,12 @@
 	const confirmPassword = document.getElementById('confirmPassword');
 	const passwordError = document.getElementById('passwordError');
 	const confirmError = document.getElementById('confirmError');
-	
 	function validatePassword(pwd) {
 	  return pwd.length >= 8 && 
 		/[A-Z]/.test(pwd) && 
 		/[a-z]/.test(pwd) && 
 		/[0-9]/.test(pwd);
 	}
-	
 	form.addEventListener('submit', function(e) {
 	  let valid = true;
 	  passwordError.style.display = 'none';
