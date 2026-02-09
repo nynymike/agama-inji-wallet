@@ -25,24 +25,19 @@
 		  <label for="mail">Email</label>
 		  <input type="email" id="mail" name="mail" value="${mail!''}">
 		</div>
-		&lt;#if vcUserInfo.mobile?? &amp;&amp; vcUserInfo.mobile != ''&gt;
+
 		<div class="form-group">
 		  <label for="mobile">Phone Number</label>
 		  <input type="tel" id="mobile" name="mobile" value="${mobile}">
 		</div>
-		<!--#if-->
-		&lt;#if vcUserInfo.gender?? &amp;&amp; vcUserInfo.gender != ''&gt;
 		<div class="form-group">
 		  <label for="gender">Gender</label>
 		  <input type="text" id="gender" name="gender" value="${gender}">
 		</div>
-		<!--#if-->
-		&lt;#if vcUserInfo.birthdate?? &amp;&amp; vcUserInfo.birthdate != ''&gt;
 		<div class="form-group">
 		  <label for="birthdate">Date of Birth</label>
 		  <input type="text" id="birthdate" name="birthdate" value="${birthdate}">
 		</div>
-		<!--#if-->
 		<hr>
 		<div class="form-group">
 		  <label for="password">Password <span class="required">*</span></label>
