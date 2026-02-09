@@ -477,7 +477,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     @Override
     public Map<String, String> checkUserExists(String email, String uidRef) {
         try {
-            if(uidRef != null){
+            LogUtils.log("FIND INFO for mail: % or uidRef: %", email, uidRef);
+            if(uidRef != null || !uidRef.isEmpty()){
                 User user = getUser(UID, uidRef);
                 if (user == null) {
                     LogUtils.log("No existing user found with uidRef: %", uidRef);
@@ -524,7 +525,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                 
                 return result;
             }
-            
+
             if (email == null || !email.contains("@")) {
                 LogUtils.log("Error: Invalid email provided");
                 return null;
