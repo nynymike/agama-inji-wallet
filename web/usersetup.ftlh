@@ -19,28 +19,28 @@
 	  <form method="post" id="setupForm">
 		<div class="form-group">
 		  <label for="displayName">Full Name</label>
-		  <input type="text" id="displayName" name="displayName" value="${vcUserInfo.displayName!''}">
+		  <input type="text" id="displayName" name="displayName" value="${displayName!''}">
 		</div>
 		<div class="form-group">
 		  <label for="mail">Email</label>
-		  <input type="email" id="mail" name="mail" value="${vcUserInfo.mail!''}">
+		  <input type="email" id="mail" name="mail" value="${mail!''}">
 		</div>
 		&lt;#if vcUserInfo.mobile?? &amp;&amp; vcUserInfo.mobile != ''&gt;
 		<div class="form-group">
 		  <label for="mobile">Phone Number</label>
-		  <input type="tel" id="mobile" name="mobile" value="${vcUserInfo.mobile}">
+		  <input type="tel" id="mobile" name="mobile" value="${mobile}">
 		</div>
 		<!--#if-->
 		&lt;#if vcUserInfo.gender?? &amp;&amp; vcUserInfo.gender != ''&gt;
 		<div class="form-group">
 		  <label for="gender">Gender</label>
-		  <input type="text" id="gender" name="gender" value="${vcUserInfo.gender}">
+		  <input type="text" id="gender" name="gender" value="${gender}">
 		</div>
 		<!--#if-->
 		&lt;#if vcUserInfo.birthdate?? &amp;&amp; vcUserInfo.birthdate != ''&gt;
 		<div class="form-group">
 		  <label for="birthdate">Date of Birth</label>
-		  <input type="text" id="birthdate" name="birthdate" value="${vcUserInfo.birthdate}">
+		  <input type="text" id="birthdate" name="birthdate" value="${birthdate}">
 		</div>
 		<!--#if-->
 		<hr>
