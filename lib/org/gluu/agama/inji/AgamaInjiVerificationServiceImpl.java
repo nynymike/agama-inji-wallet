@@ -556,7 +556,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             newUser.setAttribute(UID, uid);
             
             // Set password
-            newUser.setAttribute("userPassword", password);
+            // newUser.setAttribute("userPassword", password);
             
             // Set all attributes from gluuAttrs dynamically
             for (Map.Entry<String, String> entry : gluuAttrs.entrySet()) {
@@ -597,8 +597,16 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                 return Collections.emptyMap();
             }
 
-            LogUtils.log("New user added with password: %", email);
-        
+            LogUtils.log("New user added");
+
+            User updateUser = getUser(MAIL, email);
+            
+            updateUser.setAttribute("userPassword", password);
+
+            updatedUser = userService.updateUser(updateUser);
+            
+            LogUtils.log("User update with password : %", updatedUser);
+
             String inum = getSingleValuedAttr(newUser, INUM_ATTR);
             String firstName = getSingleValuedAttr(newUser, GIVEN_NAME);
 
