@@ -475,58 +475,111 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     }
 
     @Override
-    public Map<String, String> checkUserExists(String email) {
-        if (email == null || !email.contains("@")) {
-            LogUtils.log("Error: Invalid email provided");
-            return null;
-        }
+    public Map<String, String> checkUserExists(String email, String uidRef) {
+        try {
+            if(uidRef != null){
+                User user = getUser(UID, uidRef);
+                if (user == null) {
+                    LogUtils.log("No existing user found with uidRef: %", uidRef);
+                    return null;
+                }
 
-        User user = getUser(MAIL, email);
-        
-        if (user == null) {
-            LogUtils.log("No existing user found for email: %", email);
-            return null;
-        }
+                LogUtils.log("Found existing user for uidRef: %", uidRef);
+                
+                String mail = getSingleValuedAttr(user, MAIL);
+                String inum = getSingleValuedAttr(user, INUM_ATTR);
+                String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
+                String givenName = getSingleValuedAttr(user, GIVEN_NAME);
+                
+                if (givenName == null) {
+                    givenName = displayName;
+                    if (givenName == null) {
+                        givenName = mail.substring(0, mail.indexOf("@"));
+                    }
+                }
+                
+                // Handle verifiable credentials update
+                if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
+                    String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
+                    String mergedCredentials = mergeVerifiableCredentials(existingCredentials, this.VERIFIABLE_CREDENTIALS_JSON);
+                    
+                    // Update user with merged credentials
+                    user.setAttribute(VERIFIABLE_CREDENTIALS, mergedCredentials);
+                    
+                    try {
+                        UserService userService = CdiUtil.bean(UserService.class);
+                        userService.updateUser(user);
+                        LogUtils.log("Updated verifiable credentials for existing user: %", uidRef);
+                    } catch (Exception e) {
+                        LogUtils.log("Error updating user credentials: %", e.getMessage());
+                    }
+                }
+                
+                Map<String, String> result = new HashMap<>();
+                result.put(UID, uidRef);
+                result.put(INUM_ATTR, inum);
+                result.put(MAIL, mail);
+                result.put(DISPLAY_NAME, displayName);
+                result.put(GIVEN_NAME, givenName);
+                
+                return result;
+            }
+            
+            if (email == null || !email.contains("@")) {
+                LogUtils.log("Error: Invalid email provided");
+                return null;
+            }
 
-        LogUtils.log("Found existing user for email: %", email);
-        
-        String uid = getSingleValuedAttr(user, UID);
-        String inum = getSingleValuedAttr(user, INUM_ATTR);
-        String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
-        String givenName = getSingleValuedAttr(user, GIVEN_NAME);
-        
-        if (givenName == null) {
-            givenName = displayName;
+            User user = getUser(MAIL, email);
+            
+            if (user == null) {
+                LogUtils.log("No existing user found for email: %", email);
+                return null;
+            }
+
+            LogUtils.log("Found existing user for email: %", email);
+            
+            String uid = getSingleValuedAttr(user, UID);
+            String inum = getSingleValuedAttr(user, INUM_ATTR);
+            String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
+            String givenName = getSingleValuedAttr(user, GIVEN_NAME);
+            
             if (givenName == null) {
-                givenName = email.substring(0, email.indexOf("@"));
+                givenName = displayName;
+                if (givenName == null) {
+                    givenName = email.substring(0, email.indexOf("@"));
+                }
             }
+            
+            // Handle verifiable credentials update
+            if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
+                String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
+                String mergedCredentials = mergeVerifiableCredentials(existingCredentials, this.VERIFIABLE_CREDENTIALS_JSON);
+                
+                // Update user with merged credentials
+                user.setAttribute(VERIFIABLE_CREDENTIALS, mergedCredentials);
+                
+                try {
+                    UserService userService = CdiUtil.bean(UserService.class);
+                    userService.updateUser(user);
+                    LogUtils.log("Updated verifiable credentials for existing user: %", email);
+                } catch (Exception e) {
+                    LogUtils.log("Error updating user credentials: %", e.getMessage());
+                }
+            }
+            
+            Map<String, String> result = new HashMap<>();
+            result.put(UID, uid);
+            result.put(INUM_ATTR, inum);
+            result.put(MAIL, email);
+            result.put(DISPLAY_NAME, displayName);
+            result.put(GIVEN_NAME, givenName);
+            
+            return result;
+        } catch (Exception e) {
+            LogUtils.log("Error : %", e);
         }
         
-        // Handle verifiable credentials update
-        if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
-            String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
-            String mergedCredentials = mergeVerifiableCredentials(existingCredentials, this.VERIFIABLE_CREDENTIALS_JSON);
-            
-            // Update user with merged credentials
-            user.setAttribute(VERIFIABLE_CREDENTIALS, mergedCredentials);
-            
-            try {
-                UserService userService = CdiUtil.bean(UserService.class);
-                userService.updateUser(user);
-                LogUtils.log("Updated verifiable credentials for existing user: %", email);
-            } catch (Exception e) {
-                LogUtils.log("Error updating user credentials: %", e.getMessage());
-            }
-        }
-        
-        Map<String, String> result = new HashMap<>();
-        result.put(UID, uid);
-        result.put(INUM_ATTR, inum);
-        result.put(MAIL, email);
-        result.put(DISPLAY_NAME, displayName);
-        result.put(GIVEN_NAME, givenName);
-        
-        return result;
     }
 
     @Override
