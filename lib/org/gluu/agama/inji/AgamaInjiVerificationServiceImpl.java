@@ -285,7 +285,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR TRANSACTION-ID : %", response.body());
+                // LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR TRANSACTION-ID : %", response.body());
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> data = mapper.readValue(response.body(), Map.class);
                 // Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
@@ -294,7 +294,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     List<Map<String, Object>> vcResults = (List<Map<String, Object>>) data.get("vcResults");
                     String vc = (String) vcResults.get(0).get("vc");
                     this.USER_INFO_FROM_VC = vc;
-                    
+                    LogUtils.log("INJI : VC info -- %", vc);
                     // Store verifiable credentials as JSON
                     this.VERIFIABLE_CREDENTIALS_JSON = buildVerifiableCredentialsJson(vcResults);
                     LogUtils.log("Stored verifiable credentials JSON: %", this.VERIFIABLE_CREDENTIALS_JSON);
