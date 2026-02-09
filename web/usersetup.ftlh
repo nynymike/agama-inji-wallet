@@ -1,148 +1,199 @@
 [#ftl output_format="HTML"]
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Complete_Form
-	</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2/dist/tailwind.min.css" type="text/css"></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Complete Your Profile
+	</title></head>
 <body>
 
   
 	
 	
 	
-	
-	
   
   
-	<div class="md:h-screen bg-white relative flex flex-col justify-center items-center">
-	  <div class="md:border md:border-gray-300 bg-white md:shadow-lg shadow-none rounded p-10 align-middle">
-		<div class="flex flex-col items-center space-y-3">
-		  <div class="flex">
-			<img src="https://gluu.org/wp-content/uploads/2020/12/logo.png">
-		  </div>
-		  <span class="text-2xl font-semi-bold leading-normal">Form</span>
-		  <p class="leading-normal">Sample Form
+	<div class="container">
+	  <h1>Complete Your Registration
+	  </h1>
+	  <p class="subtitle">Review your verified NID information and set a password
+	  </p>
+	  <form method="post" id="setupForm">
+		<div class="form-group">
+		  <label for="displayName">Full Name</label>
+		  <input type="text" id="displayName" name="displayName" value="${vcUserInfo.displayName!''}">
+		</div>
+		<div class="form-group">
+		  <label for="mail">Email</label>
+		  <input type="email" id="mail" name="mail" value="${vcUserInfo.mail!''}">
+		</div>
+		&lt;#if vcUserInfo.mobile?? &amp;&amp; vcUserInfo.mobile != ''&gt;
+		<div class="form-group">
+		  <label for="mobile">Phone Number</label>
+		  <input type="tel" id="mobile" name="mobile" value="${vcUserInfo.mobile}">
+		</div>
+		<!--#if-->
+		&lt;#if vcUserInfo.gender?? &amp;&amp; vcUserInfo.gender != ''&gt;
+		<div class="form-group">
+		  <label for="gender">Gender</label>
+		  <input type="text" id="gender" name="gender" value="${vcUserInfo.gender}">
+		</div>
+		<!--#if-->
+		&lt;#if vcUserInfo.birthdate?? &amp;&amp; vcUserInfo.birthdate != ''&gt;
+		<div class="form-group">
+		  <label for="birthdate">Date of Birth</label>
+		  <input type="text" id="birthdate" name="birthdate" value="${vcUserInfo.birthdate}">
+		</div>
+		<!--#if-->
+		<hr>
+		<div class="form-group">
+		  <label for="password">Password <span class="required">*</span></label>
+		  <input type="password" id="password" name="password" required="">
+		  <p class="password-requirements">Minimum 8 characters, include uppercase, lowercase, and number
+		  </p>
+		  <p id="passwordError" class="error">Password does not meet requirements
 		  </p>
 		</div>
-		<form method="post" class="my-8">
-		  <div class="grid grid-cols-2 gap-2">
-			<div>
-			  <div class="relative mb-4">
-				<input type="text" id="displayName" name="displayName" autofocus="" required="" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none">
-				<label for="displayName" class="label absolute mt-2 ml-3 leading-tighter text-gray-600 text-base cursor-text">
-				  Display Name
-				</label>
-			  </div>
-			  <div class="relative mb-4">
-				<input type="email" id="email" name="email" required="" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none">
-				<label for="email" class="label absolute mt-2 ml-3 leading-tighter text-gray-600 text-base cursor-text">
-				  Email
-				</label>
-			  </div>
-			  <div class="relative mb-4">
-				<input type="text" id="birthday" name="birthday" required="" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none">
-				<label for="birthday" class="label absolute mt-2 ml-3 leading-tighter text-gray-600 text-base cursor-text">
-				  Birthday
-				</label>
-			  </div>
-			  <div class="relative mb-4">
-				<select type="text" id="gender" name="gender" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none"><option value=""></option><option value="male">Male</option><option value="female">Female</option></select>
-				<label for="gender" class="label absolute mt-2 ml-3 leading-tighter text-gray-600 text-base cursor-text">
-				  Gender
-				</label>
-			  </div>
-			  <div class="relative mb-4">
-				<input type="file" id="avatar" name="avatar" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none">
-			  </div>
-			</div>
-			<div>
-			  <div class="relative mb-4">
-				<input type="text" id="secret" name="secret" required="" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none">
-				<label for="secret" class="label absolute mt-2 ml-3 leading-tighter text-gray-600 text-base cursor-text">
-				  Secret
-				</label>
-			  </div>
-			  <div class="relative mb-4">
-				<input type="password" id="password" required="" name="password" class="w-full rounded px-3 border border-gray-300 pt-5 pb-2 focus:border-green-700 focus:ring-1 focus:ring-green-700 focus:outline-none input active:outline-none">
-				<label for="password" class="label absolute mt-2 ml-3 leading-tighter text-gray-600 text-base cursor-text">
-				  Password
-				</label>
-			  </div>
-			</div>
-		  </div>
-		  <div class="space-y-9 mt-8">
-			<div class="text-sm flex justify-center items-center">
-			  <button type="submit" class="py-3 px-8 rounded text-white btn bg-green-500 hover:bg-green-600">
-				Submit
-			  </button>
-			</div>
-		  </div>
-		</form>
-	  </div>
+		<div class="form-group">
+		  <label for="confirmPassword">Confirm Password <span class="required">*</span></label>
+		  <input type="password" id="confirmPassword" name="confirmPassword" required="">
+		  <p id="confirmError" class="error">Passwords do not match
+		  </p>
+		</div>
+		<button type="submit" class="btn">Complete Setup</button>
+	  </form>
 	</div>
+  
   
   
 </body>
 <style>
 	* {
+	  margin: 0;
+	  padding: 0;
 	  box-sizing: border-box;
 	}
 	body {
-	  margin: 0;
+	  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+	  background: #f5f5f5;
+	  padding: 20px;
 	}
-	* {
-	  margin-top: 0px;
-	  margin-right: 0px;
-	  margin-bottom: 0px;
-	  margin-left: 0px;
-	  padding-top: 0px;
-	  padding-right: 0px;
-	  padding-bottom: 0px;
-	  padding-left: 0px;
-	  font-family: 'Open Sans', sans-serif;
+	.container {
+	  max-width: 600px;
+	  margin: 0 auto;
+	  background: white;
+	  border-radius: 8px;
+	  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+	  padding: 40px;
 	}
-	.input {
-	  transition-duration: 0.2s;
-	  transition-timing-function: ease-in-out;
-	  transition-delay: 0s;
-	  transition-property: border;
-	  min-width: 280px;
+	h1 {
+	  color: #333;
+	  margin-bottom: 10px;
+	  font-size: 24px;
 	}
-	.input:focus + .label,
-	.input:active + .label,
-	.input.filled + .label {
-	  font-size: 0.75rem;
-	  transition-duration: 0.2s;
-	  transition-timing-function: ease-out;
-	  transition-delay: 0s;
-	  transition-property: all;
-	  top: -0.9rem;
-	  background-color: rgb(255, 255, 255);
-	  color: rgb(26, 115, 232);
-	  padding-top: 0px;
-	  padding-right: 5px;
-	  padding-bottom: 0px;
-	  padding-left: 5px;
-	  margin-top: 0px;
-	  margin-right: 5px;
-	  margin-bottom: 0px;
-	  margin-left: 5px;
+	.subtitle {
+	  color: #666;
+	  margin-bottom: 30px;
+	  font-size: 14px;
 	}
-	.label {
-	  transition-duration: 0.2s;
-	  transition-timing-function: ease-out;
-	  transition-delay: 0s;
-	  transition-property: all;
-	  top: 0.4rem;
-	  left: 0px;
+	.form-group {
+	  margin-bottom: 20px;
+	  position: relative;
 	}
-	.w-full.rounded.px-3.border.border-gray-300.pt-5.pb-2.focus:border-green-700.focus:ring-1.focus:ring-green-700.focus:outline-none.input.active:outline-none {
-	  background-color: #eeeeee;
+	label {
+	  display: block;
+	  margin-bottom: 5px;
+	  color: #333;
+	  font-weight: 500;
+	  font-size: 14px;
 	}
-	::-webkit-datetime-edit-year-field:not([aria-valuenow]),
-	::-webkit-datetime-edit-month-field:not([aria-valuenow]),
-	::-webkit-datetime-edit-day-field:not([aria-valuenow]) {
-	  color: transparent;
+	input {
+	  width: 100%;
+	  padding: 12px;
+	  border: 1px solid #ddd;
+	  border-radius: 4px;
+	  font-size: 14px;
+	}
+	input:focus {
+	  outline: none;
+	  border-color: #4CAF50;
+	}
+	.required {
+	  color: #e74c3c;
+	}
+	.password-requirements {
+	  font-size: 12px;
+	  color: #666;
+	  margin-top: 5px;
+	}
+	.btn {
+	  width: 100%;
+	  padding: 14px;
+	  background: #4CAF50;
+	  color: white;
+	  border: none;
+	  border-radius: 4px;
+	  font-size: 16px;
+	  font-weight: 500;
+	  cursor: pointer;
+	  margin-top: 10px;
+	}
+	.btn:hover {
+	  background: #45a049;
+	}
+	.btn-secondary {
+	  background: #2196F3;
+	  margin-bottom: 10px;
+	}
+	.btn-secondary:hover {
+	  background: #1976D2;
+	}
+	.error {
+	  color: #e74c3c;
+	  font-size: 13px;
+	  margin-top: 5px;
+	  display: none;
+	}
+	.info-box {
+	  background: #e3f2fd;
+	  border-left: 4px solid #2196F3;
+	  padding: 15px;
+	  margin-bottom: 25px;
+	  border-radius: 4px;
+	}
+	.info-box p {
+	  color: #1976D2;
+	  font-size: 14px;
 	}
   </style>
-
+<script>
+	const form = document.getElementById('setupForm');
+	const password = document.getElementById('password');
+	const confirmPassword = document.getElementById('confirmPassword');
+	const passwordError = document.getElementById('passwordError');
+	const confirmError = document.getElementById('confirmError');
+	
+	function validatePassword(pwd) {
+	  return pwd.length >= 8 && 
+		/[A-Z]/.test(pwd) && 
+		/[a-z]/.test(pwd) && 
+		/[0-9]/.test(pwd);
+	}
+	
+	form.addEventListener('submit', function(e) {
+	  let valid = true;
+	  passwordError.style.display = 'none';
+	  confirmError.style.display = 'none';
+	  if (!validatePassword(password.value)) {
+		passwordError.style.display = 'block';
+		valid = false;
+	  }
+	  if (password.value !== confirmPassword.value) {
+		confirmError.style.display = 'block';
+		valid = false;
+	  }
+	  if (!valid) {
+		e.preventDefault();
+	  }
+	}
+						 );
+  </script>
 </html>
