@@ -556,14 +556,14 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             newUser.setAttribute(UID, uid);
             
             // Set password
-            // newUser.setAttribute("userPassword", password);
+            newUser.setAttribute("userPassword", password);
             
             // Set all attributes from gluuAttrs dynamically
             for (Map.Entry<String, String> entry : gluuAttrs.entrySet()) {
                 String attrName = entry.getKey();
                 String attrValue = entry.getValue();
 
-                if (UID.equals(attrName)) continue;
+                if (UID.equals(attrName) || "password".equals(attrName) || "confirmPassword".equals(attrName)) continue;
                 if (VERIFIABLE_CREDENTIALS.equals(attrName)) continue; // Skip, will handle separately
                 
                 if ("birthdate".equals(attrName)) {
@@ -599,13 +599,13 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
             LogUtils.log("New user added");
 
-            User updateUser = getUser(MAIL, email);
+            // User updateUser = getUser(MAIL, email);
             
-            updateUser.setAttribute("userPassword", password);
+            // updateUser.setAttribute("userPassword", password);
 
-            updatedUser = userService.updateUser(updateUser);
+            // updatedUser = userService.updateUser(updateUser);
             
-            LogUtils.log("User update with password : %", updatedUser);
+            // LogUtils.log("User update with password : %", updatedUser);
 
             String inum = getSingleValuedAttr(newUser, INUM_ATTR);
             String firstName = getSingleValuedAttr(newUser, GIVEN_NAME);
