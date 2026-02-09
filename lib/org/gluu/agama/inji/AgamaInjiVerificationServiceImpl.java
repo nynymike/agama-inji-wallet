@@ -584,10 +584,10 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             }
             
             // Store verifiable credentials JSON if available
-            // if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
-            //     newUser.setAttribute(VERIFIABLE_CREDENTIALS, this.VERIFIABLE_CREDENTIALS_JSON);
-            //     LogUtils.log("Added verifiable credentials to user profile");
-            // }
+            if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
+                newUser.setAttribute(VERIFIABLE_CREDENTIALS, this.VERIFIABLE_CREDENTIALS_JSON);
+                LogUtils.log("Added verifiable credentials to user profile");
+            }
             LogUtils.log("Final USER : % ", newUser);
             UserService userService = CdiUtil.bean(UserService.class);
             newUser = userService.addUser(newUser, true);
@@ -756,7 +756,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             // Merge: new credentials override existing ones with same key
             existingMap.putAll(newMap);
             
-            LogUtils.log("Merged credentials. Total types: %", existingMap.size());
+            LogUtils.log("Merged credentials. Total types: %", existingMap);
             
             return mapper.writeValueAsString(existingMap);
             
