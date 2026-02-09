@@ -430,6 +430,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
     @Override
     public Map<String, String> extractUserInfoFromVC() {
+        LogUtils.log("INJI : Extract user info from VC : %", USER_INFO_FROM_VC);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, String> gluuAttrs = new HashMap<>();
 
