@@ -176,6 +176,8 @@ The project stores complete verifiable credentials in a JSONB column. Following 
 ALTER TABLE "jansPerson" ADD COLUMN "verifiableCredentials" jsonb;
 ```
 
+Then add an attributes using Jans-TUI or Admin UI.
+
 
 
 <!-- This are stats url reference for this repository -->
