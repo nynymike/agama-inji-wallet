@@ -478,77 +478,53 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     public Map<String, String> checkUserExists(String email, String uidRef) {
         try {
             LogUtils.log("FIND INFO for mail: % or uidRef: %", email, uidRef);
-            if(uidRef != null || !uidRef.isEmpty()){
+            
+            // First, try to find by uidRef if provided
+            if(uidRef != null && !uidRef.isEmpty()){
                 User user = getUser(INUM_ATTR, uidRef);
                 if (user == null) {
                     LogUtils.log("No existing user found with uidRef: %", uidRef);
+                    // Fall through to check by email if provided
+                } else {
+                    LogUtils.log("Found existing user for uidRef: %", uidRef);
+                    return buildUserResult(user, uidRef);
+                }
+            }
+
+            // Try to find by email if provided
+            if (email != null && email.contains("@")) {
+                User user = getUser(MAIL, email);
+                
+                if (user == null) {
+                    LogUtils.log("No existing user found for email: %", email);
                     return null;
                 }
 
-                LogUtils.log("Found existing user for uidRef: %", uidRef);
-                
-                String mail = getSingleValuedAttr(user, MAIL);
-                String uid = getSingleValuedAttr(user, UID);
-                String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
-                String givenName = getSingleValuedAttr(user, GIVEN_NAME);
-                
-                if (givenName == null) {
-                    givenName = displayName;
-                    if (givenName == null) {
-                        givenName = mail.substring(0, mail.indexOf("@"));
-                    }
-                }
-                
-                // Handle verifiable credentials update
-                if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
-                    String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
-                    String mergedCredentials = mergeVerifiableCredentials(existingCredentials, this.VERIFIABLE_CREDENTIALS_JSON);
-                    
-                    // Update user with merged credentials
-                    user.setAttribute(VERIFIABLE_CREDENTIALS, mergedCredentials);
-                    
-                    try {
-                        UserService userService = CdiUtil.bean(UserService.class);
-                        userService.updateUser(user);
-                        LogUtils.log("Updated verifiable credentials for existing user: %", uid);
-                    } catch (Exception e) {
-                        LogUtils.log("Error updating user credentials: %", e.getMessage());
-                    }
-                }
-                
-                Map<String, String> result = new HashMap<>();
-                result.put(UID, uid);
-                result.put(INUM_ATTR, uidRef);
-                result.put(MAIL, mail);
-                result.put(DISPLAY_NAME, displayName);
-                result.put(GIVEN_NAME, givenName);
-                
-                return result;
+                LogUtils.log("Found existing user for email: %", email);
+                String inum = getSingleValuedAttr(user, INUM_ATTR);
+                return buildUserResult(user, inum);
             }
-
-            if (email == null || !email.contains("@")) {
-                LogUtils.log("Error: Invalid email provided");
-                return null;
-            }
-
-            User user = getUser(MAIL, email);
             
-            if (user == null) {
-                LogUtils.log("No existing user found for email: %", email);
-                return null;
-            }
-
-            LogUtils.log("Found existing user for email: %", email);
+            LogUtils.log("Error: Neither valid email nor uidRef provided");
+            return null;
             
+        } catch (Exception e) {
+            LogUtils.log("Error in checkUserExists: %", e.getMessage());
+            return null;
+        }
+    }
+    
+    private Map<String, String> buildUserResult(User user, String inum) {
+        try {
+            String mail = getSingleValuedAttr(user, MAIL);
             String uid = getSingleValuedAttr(user, UID);
-            String inum = getSingleValuedAttr(user, INUM_ATTR);
             String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
             String givenName = getSingleValuedAttr(user, GIVEN_NAME);
             
             if (givenName == null) {
                 givenName = displayName;
-                if (givenName == null) {
-                    givenName = email.substring(0, email.indexOf("@"));
+                if (givenName == null && mail != null && mail.contains("@")) {
+                    givenName = mail.substring(0, mail.indexOf("@"));
                 }
             }
             
@@ -563,7 +539,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                 try {
                     UserService userService = CdiUtil.bean(UserService.class);
                     userService.updateUser(user);
-                    LogUtils.log("Updated verifiable credentials for existing user: %", email);
+                    LogUtils.log("Updated verifiable credentials for existing user: %", uid);
                 } catch (Exception e) {
                     LogUtils.log("Error updating user credentials: %", e.getMessage());
                 }
@@ -572,15 +548,15 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             Map<String, String> result = new HashMap<>();
             result.put(UID, uid);
             result.put(INUM_ATTR, inum);
-            result.put(MAIL, email);
+            result.put(MAIL, mail);
             result.put(DISPLAY_NAME, displayName);
             result.put(GIVEN_NAME, givenName);
             
             return result;
         } catch (Exception e) {
-            LogUtils.log("Error : %", e);
+            LogUtils.log("Error building user result: %", e.getMessage());
+            return null;
         }
-        
     }
 
     @Override
