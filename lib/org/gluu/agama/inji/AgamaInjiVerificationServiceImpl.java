@@ -479,7 +479,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         try {
             LogUtils.log("FIND INFO for mail: % or uidRef: %", email, uidRef);
             if(uidRef != null || !uidRef.isEmpty()){
-                User user = getUser(UID, uidRef);
+                User user = getUser(INUM_ATTR, uidRef);
                 if (user == null) {
                     LogUtils.log("No existing user found with uidRef: %", uidRef);
                     return null;
@@ -488,7 +488,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                 LogUtils.log("Found existing user for uidRef: %", uidRef);
                 
                 String mail = getSingleValuedAttr(user, MAIL);
-                String inum = getSingleValuedAttr(user, INUM_ATTR);
+                String uid = getSingleValuedAttr(user, UID);
                 String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
                 String givenName = getSingleValuedAttr(user, GIVEN_NAME);
                 
@@ -510,15 +510,15 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     try {
                         UserService userService = CdiUtil.bean(UserService.class);
                         userService.updateUser(user);
-                        LogUtils.log("Updated verifiable credentials for existing user: %", uidRef);
+                        LogUtils.log("Updated verifiable credentials for existing user: %", uid);
                     } catch (Exception e) {
                         LogUtils.log("Error updating user credentials: %", e.getMessage());
                     }
                 }
                 
                 Map<String, String> result = new HashMap<>();
-                result.put(UID, uidRef);
-                result.put(INUM_ATTR, inum);
+                result.put(UID, uid);
+                result.put(INUM_ATTR, uidRef);
                 result.put(MAIL, mail);
                 result.put(DISPLAY_NAME, displayName);
                 result.put(GIVEN_NAME, givenName);
