@@ -2,3 +2,8 @@ Flow io.jans.casa.inji.link
      Basepath ""
      Inputs uidRef
 Log "@info Casa Inji linking flow started for user: %" uidRef
+// Call the main verification flow
+result = Trigger com.gluu.agama.inji.verifyCredential uidRef
+// Always finish with the uidRef for successful linking
+// Even if the main flow returns something else, we return the uidRef
+Log "@info Casa Inji linking completed, returning uidRef"
