@@ -16,6 +16,8 @@ public abstract class AgamaInjiVerificationService{
     public abstract Map<String, String> extractUserInfoFromVC();
 
     public abstract Map<String, String> checkUserExists(String email, String uidRef);
+    
+    public abstract Map<String, String> checkUserExists(String email);
 
     public abstract Map<String, String> onboardUser(Map<String, String> userInfo, String password);
 
