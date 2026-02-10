@@ -1,36 +1,100 @@
 {
-  "nodes": [
-    {
-      "id": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c",
-      "type": "startNode",
-      "sourcePosition": "right",
-      "position": {
-        "x": 30,
-        "y": 30
-      },
-      "deletable": false,
-      "data": {
-        "id": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c",
-        "type": "startNode",
-        "position": {
-          "x": 30,
-          "y": 40
-        },
-        "agamaData": {
-          "isTopLevelFlow": true,
-          "basepath": "",
-          "configParams": "{}",
-          "nodeIcon": "material-symbols:line-start-square",
-          "timeout": "",
-          "inputs": "",
-          "configs": "",
-          "flowname": "io.jans.casa.inji.link",
-          "displayName": "Linking",
-          "creationDate": "10/02/2026",
-          "hasComment": true,
-          "comment": ""
-        }
-      }
-    }
-  ]
+	"nodes": [
+		{
+			"id": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c",
+			"type": "startNode",
+			"sourcePosition": "right",
+			"position": {
+				"x": 30,
+				"y": 30
+			},
+			"deletable": false,
+			"data": {
+				"id": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c",
+				"type": "startNode",
+				"position": {
+					"x": 30,
+					"y": 40
+				},
+				"agamaData": {
+					"isTopLevelFlow": true,
+					"basepath": "",
+					"configParams": {},
+					"nodeIcon": "material-symbols:line-start-square",
+					"timeout": "",
+					"inputs": "uidRef",
+					"configs": "",
+					"flowname": "io.jans.casa.inji.link",
+					"displayName": "Linking",
+					"creationDate": "10/02/2026",
+					"hasComment": true,
+					"comment": ""
+				}
+			},
+			"measured": {
+				"width": 170,
+				"height": 124
+			},
+			"selected": false
+		},
+		{
+			"id": "logNode-5b0fba12-ddf3-41cf-89d6-743bf6b67ff6",
+			"type": "logNode",
+			"position": {
+				"x": 280,
+				"y": 30
+			},
+			"data": {
+				"id": "logNode-5b0fba12-ddf3-41cf-89d6-743bf6b67ff6",
+				"type": "logNode",
+				"position": {
+					"x": 280,
+					"y": 30
+				},
+				"previousNodeId": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c",
+				"agamaData": {
+					"logMessage": "\"Casa Inji linking flow started for user: %\" uidRef",
+					"logLevel": "info",
+					"nodeIcon": "octicon:log-16",
+					"nodeColor": "",
+					"titleColor": "",
+					"descColor": "",
+					"displayName": "",
+					"hasComment": true,
+					"comment": ""
+				}
+			},
+			"measured": {
+				"width": 170,
+				"height": 124
+			},
+			"selected": true
+		}
+	],
+	"edges": [
+		{
+			"id": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c-logNode-5b0fba12-ddf3-41cf-89d6-743bf6b67ff6",
+			"type": "default",
+			"source": "startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c",
+			"target": "logNode-5b0fba12-ddf3-41cf-89d6-743bf6b67ff6",
+			"labelBgPadding": [
+				8,
+				4
+			],
+			"labelBgBorderRadius": 4,
+			"label": "",
+			"labelBgStyle": {
+				"fill": "#009688",
+				"color": "#ffffff",
+				"fillOpacity": 0.7
+			},
+			"labelShowBg": true,
+			"sourceHandle": "source_startNode-8cce33a3-3b0a-4436-9ab9-255b7faaf15c"
+		}
+	],
+	"viewport": {
+		"x": 0,
+		"y": 0,
+		"zoom": 1
+	}
 }
