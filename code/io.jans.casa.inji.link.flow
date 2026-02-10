@@ -1,2 +1,4 @@
 Flow io.jans.casa.inji.link
      Basepath ""
+     Inputs uidRef
+Log "@info Casa Inji linking flow started for user: %" uidRef
