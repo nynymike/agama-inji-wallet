@@ -514,6 +514,11 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         }
     }
     
+    @Override
+    public Map<String, String> checkUserExists(String email) {
+        return checkUserExists(email, null);
+    }
+    
     private Map<String, String> buildUserResult(User user, String inum) {
         try {
             String mail = getSingleValuedAttr(user, MAIL);
