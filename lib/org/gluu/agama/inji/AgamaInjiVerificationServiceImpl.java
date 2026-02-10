@@ -58,7 +58,9 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     private static final String DISPLAY_NAME = "displayName";
     private static final String GIVEN_NAME = "givenName";
     private static final String SN = "sn";
+    private static final String VERIFIABLE_CREDENTIALS = "verifiableCredentials";
     private String USER_INFO_FROM_VC = null;
+    private String VERIFIABLE_CREDENTIALS_JSON = null;
     // private String INJI_API_ENDPOINT = "http://mmrraju-comic-pup.gluu.info/backend/consent/new";
     private String INJI_BACKEND_BASE_URL = "https://injiverify.collab.mosip.net";
     private String INJI_WEB_BASE_URL = "https://injiweb.collab.mosip.net";
@@ -72,7 +74,8 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
     private HashMap<String, Object> flowConfig ;
     private HashMap<String, Object> PRESENATION_DEFINITION;
     private HashMap<String, Object> CLIENT_METADATA;
-    private HashMap<String, String> VC_TO_GLUU_MAPPING; 
+    private List<Map<String, Object>> CREDENTIAL_MAPPINGS;
+    private HashMap<String, String> VC_TO_GLUU_MAPPING; // Current credential mapping (NID by default)
     private static AgamaInjiVerificationServiceImpl INSTANCE = null;
 
     public AgamaInjiVerificationServiceImpl(){}
@@ -88,7 +91,22 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             this.PRESENATION_DEFINITION = flowConfig.get("presentationDefinition") !=null ? (HashMap<String, Object>) flowConfig.get("presentationDefinition") : this.getPresentationDefinitionSample();
             this.CLIENT_METADATA = flowConfig.get("clientMetadata")  !=null ? (HashMap<String, Object>) flowConfig.get("clientMetadata") : this.buildClientMetadata();
             this.CALLBACK_URL = flowConfig.get("agamaCallBackUrl") != null ? flowConfig.get("agamaCallBackUrl").toString() : CALLBACK_URL;
-            this.VC_TO_GLUU_MAPPING = flowConfig.get("vcToGluuMapping") !=null ? (HashMap<String, String>) flowConfig.get("vcToGluuMapping"): VC_TO_GLUU_MAPPING;
+            
+            // Load credential mappings list
+            this.CREDENTIAL_MAPPINGS = flowConfig.get("credentialMappings") != null ? 
+                (List<Map<String, Object>>) flowConfig.get("credentialMappings") : new ArrayList<>();
+            
+            // Set default mapping to NID (first in list or fallback)
+            if (!this.CREDENTIAL_MAPPINGS.isEmpty()) {
+                Map<String, Object> nidMapping = this.CREDENTIAL_MAPPINGS.get(0);
+                this.VC_TO_GLUU_MAPPING = (HashMap<String, String>) nidMapping.get("vcToGluuMapping");
+                LogUtils.log("Loaded credential mapping for type: %", nidMapping.get("credentialType"));
+            } else {
+                // Fallback to old config format for backward compatibility
+                this.VC_TO_GLUU_MAPPING = flowConfig.get("vcToGluuMapping") != null ? 
+                    (HashMap<String, String>) flowConfig.get("vcToGluuMapping") : new HashMap<>();
+                LogUtils.log("Using legacy vcToGluuMapping configuration");
+            }
         }else{
             LogUtils.log("Error: No configuration provided using default may not work properly...");
         }
@@ -267,7 +285,7 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() == 200) {
-                LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR TRANSACTION-ID : %", response.body());
+                // LogUtils.log("INJI VERIFY BACKEND RESPONSE FOR TRANSACTION-ID : %", response.body());
                 ObjectMapper mapper = new ObjectMapper();
                 Map<String, Object> data = mapper.readValue(response.body(), Map.class);
                 // Map<String, Object> data = (Map<String, Object>) mapData.get("Data");
@@ -276,6 +294,11 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
                     List<Map<String, Object>> vcResults = (List<Map<String, Object>>) data.get("vcResults");
                     String vc = (String) vcResults.get(0).get("vc");
                     this.USER_INFO_FROM_VC = vc;
+                    LogUtils.log("INJI : VC info -- %", vc);
+                    // Store verifiable credentials as JSON
+                    this.VERIFIABLE_CREDENTIALS_JSON = buildVerifiableCredentialsJson(vcResults);
+                    LogUtils.log("Stored verifiable credentials JSON: %", this.VERIFIABLE_CREDENTIALS_JSON);
+                    
                     return data.get("vpResultStatus").toString();
                 } else {
                     return "UNKNOWN";
@@ -405,8 +428,9 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         return clientMetadata;
     }
 
-    public Map<String, String> jansPersonAttributes() {
-
+    @Override
+    public Map<String, String> extractUserInfoFromVC() {
+        LogUtils.log("INJI : Extract user info from VC : %", USER_INFO_FROM_VC);
         ObjectMapper mapper = new ObjectMapper();
         Map<String, String> gluuAttrs = new HashMap<>();
 
@@ -439,11 +463,6 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
                     if (normalizedValue != null) {
                         gluuAttrs.put(gluuAttrName, normalizedValue);
-                        // if ("birthdate".equals(gluuAttrName)) {
-                        //     gluuAttrs.put(gluuAttrName, parseBirthdate(normalizedValue));
-                        // } else {
-                        //     gluuAttrs.put(gluuAttrName, normalizedValue);
-                        // }
                     }
                 }
             }
@@ -454,84 +473,207 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
 
         return gluuAttrs;
     }
+
     @Override
-    public Map<String, String> onboardUser() {
+    public Map<String, String> checkUserExists(String email, String uidRef) {
+        try {
+            LogUtils.log("FIND INFO for mail: % or uidRef: %", email, uidRef);
+            if(uidRef != null || !uidRef.isEmpty()){
+                User user = getUser(INUM_ATTR, uidRef);
+                if (user == null) {
+                    LogUtils.log("No existing user found with uidRef: %", uidRef);
+                    return null;
+                }
 
-        Map<String, String> gluuAttrs = jansPersonAttributes();
-        LogUtils.log("VC registration claims: %", gluuAttrs);
+                LogUtils.log("Found existing user for uidRef: %", uidRef);
+                
+                String mail = getSingleValuedAttr(user, MAIL);
+                String uid = getSingleValuedAttr(user, UID);
+                String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
+                String givenName = getSingleValuedAttr(user, GIVEN_NAME);
+                
+                if (givenName == null) {
+                    givenName = displayName;
+                    if (givenName == null) {
+                        givenName = mail.substring(0, mail.indexOf("@"));
+                    }
+                }
+                
+                // Handle verifiable credentials update
+                if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
+                    String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
+                    String mergedCredentials = mergeVerifiableCredentials(existingCredentials, this.VERIFIABLE_CREDENTIALS_JSON);
+                    
+                    // Update user with merged credentials
+                    user.setAttribute(VERIFIABLE_CREDENTIALS, mergedCredentials);
+                    
+                    try {
+                        UserService userService = CdiUtil.bean(UserService.class);
+                        userService.updateUser(user);
+                        LogUtils.log("Updated verifiable credentials for existing user: %", uid);
+                    } catch (Exception e) {
+                        LogUtils.log("Error updating user credentials: %", e.getMessage());
+                    }
+                }
+                
+                Map<String, String> result = new HashMap<>();
+                result.put(UID, uid);
+                result.put(INUM_ATTR, uidRef);
+                result.put(MAIL, mail);
+                result.put(DISPLAY_NAME, displayName);
+                result.put(GIVEN_NAME, givenName);
+                
+                return result;
+            }
 
-        if (gluuAttrs.isEmpty()) {
-            LogUtils.log("Error: No mapped attributes from VC");
-            return Collections.emptyMap();
-        }
+            if (email == null || !email.contains("@")) {
+                LogUtils.log("Error: Invalid email provided");
+                return null;
+            }
 
-        String email = gluuAttrs.get("mail");
-        if (email == null || !email.contains("@")) {
-            LogUtils.log("Error: Email missing or invalid in VC");
-            return Collections.emptyMap();
-        }
+            User user = getUser(MAIL, email);
+            
+            if (user == null) {
+                LogUtils.log("No existing user found for email: %", email);
+                return null;
+            }
 
-        User user = getUser(MAIL, email);
-        boolean local = user != null;
-
-        LogUtils.log("There is % local account for %", local ? "a" : "no", email);
-
-        if (local) {
+            LogUtils.log("Found existing user for email: %", email);
+            
             String uid = getSingleValuedAttr(user, UID);
             String inum = getSingleValuedAttr(user, INUM_ATTR);
-
             String displayName = getSingleValuedAttr(user, DISPLAY_NAME);
             String givenName = getSingleValuedAttr(user, GIVEN_NAME);
+            
             if (givenName == null) {
                 givenName = displayName;
                 if (givenName == null) {
                     givenName = email.substring(0, email.indexOf("@"));
                 }
             }
-            Map<String, String> result = new HashMap<>(gluuAttrs);
+            
+            // Handle verifiable credentials update
+            if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
+                String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
+                String mergedCredentials = mergeVerifiableCredentials(existingCredentials, this.VERIFIABLE_CREDENTIALS_JSON);
+                
+                // Update user with merged credentials
+                user.setAttribute(VERIFIABLE_CREDENTIALS, mergedCredentials);
+                
+                try {
+                    UserService userService = CdiUtil.bean(UserService.class);
+                    userService.updateUser(user);
+                    LogUtils.log("Updated verifiable credentials for existing user: %", email);
+                } catch (Exception e) {
+                    LogUtils.log("Error updating user credentials: %", e.getMessage());
+                }
+            }
+            
+            Map<String, String> result = new HashMap<>();
             result.put(UID, uid);
             result.put(INUM_ATTR, inum);
             result.put(MAIL, email);
             result.put(DISPLAY_NAME, displayName);
+            result.put(GIVEN_NAME, givenName);
+            
             return result;
+        } catch (Exception e) {
+            LogUtils.log("Error : %", e);
+        }
+        
+    }
 
-        }else{
+    @Override
+    public Map<String, String> onboardUser(Map<String, String> userInfo, String password) {
+        try {
+            Map<String, String> gluuAttrs = userInfo;
+            LogUtils.log("User registration data: %", gluuAttrs);
+
+            if (gluuAttrs.isEmpty()) {
+                LogUtils.log("Error: No user data provided");
+                return Collections.emptyMap();
+            }
+
+            String email = gluuAttrs.get("mail");
+            if (email == null || !email.contains("@")) {
+                LogUtils.log("Error: Email missing or invalid");
+                return Collections.emptyMap();
+            }
+
+            if (password == null || password.isEmpty()) {
+                LogUtils.log("Error: Password is required");
+                return Collections.emptyMap();
+            }
+
             User newUser = new User();
-            String uid = email.substring(0, email.indexOf("@"));
+            String uid = email;  // Use full email as UID
             newUser.setAttribute(UID, uid);
+            
+            // Set password
+            newUser.setAttribute("userPassword", password);
+            
             // Set all attributes from gluuAttrs dynamically
             for (Map.Entry<String, String> entry : gluuAttrs.entrySet()) {
                 String attrName = entry.getKey();
                 String attrValue = entry.getValue();
 
-                if (UID.equals(attrName)) continue;
-                if("birthdate".equals(attrName)){
-                    LocalDate localDate = LocalDate.parse(attrValue.replace('/', '-')); // parses yyyy-MM-dd
-                    LocalDateTime localDateTime = localDate.atStartOfDay();
-                    newUser.setAttribute(attrName, Timestamp.valueOf(localDateTime));
-                }else{
+                if (UID.equals(attrName) || "password".equals(attrName) || "confirmPassword".equals(attrName)) continue;
+                if (VERIFIABLE_CREDENTIALS.equals(attrName)) continue; // Skip, will handle separately
+                
+                if ("birthdate".equals(attrName)) {
+                    try {
+                        LocalDate localDate = LocalDate.parse(attrValue.replace('/', '-'));
+                        LocalDateTime localDateTime = localDate.atStartOfDay();
+                        newUser.setAttribute(attrName, Timestamp.valueOf(localDateTime));
+                    } catch (DateTimeParseException e) {
+                        LogUtils.log("Warning: Invalid birthdate format: %", attrValue);
+                    }
+                } else {
                     newUser.setAttribute(attrName, attrValue);
                 }
-                
             }
-
+            
+            if (gluuAttrs.get(DISPLAY_NAME) != null) {
+                newUser.setAttribute(GIVEN_NAME, gluuAttrs.get(DISPLAY_NAME));
+            }
+            
+            // Store verifiable credentials JSON if available
+            if (this.VERIFIABLE_CREDENTIALS_JSON != null) {
+                newUser.setAttribute(VERIFIABLE_CREDENTIALS, this.VERIFIABLE_CREDENTIALS_JSON);
+                LogUtils.log("Added verifiable credentials to user profile");
+            }
+            LogUtils.log("Final USER : % ", newUser);
             UserService userService = CdiUtil.bean(UserService.class);
             newUser = userService.addUser(newUser, true);
 
             if (newUser == null) {
-                LogUtils.log("Error: Added user not found");
+                LogUtils.log("Error: Failed to add user");
                 return Collections.emptyMap();
             }
 
-            LogUtils.log("New user added: %", email);
-        
+            LogUtils.log("New user added");
+
+            // User updateUser = getUser(MAIL, email);
+            
+            // updateUser.setAttribute("userPassword", password);
+
+            // updatedUser = userService.updateUser(updateUser);
+            
+            // LogUtils.log("User update with password : %", updatedUser);
+
             String inum = getSingleValuedAttr(newUser, INUM_ATTR);
+            String firstName = getSingleValuedAttr(newUser, GIVEN_NAME);
 
             Map<String, String> result = new HashMap<>(gluuAttrs);
             result.put(UID, uid);
             result.put(INUM_ATTR, inum);
+            result.put(GIVEN_NAME, firstName);
             return result;
+
+        } catch (Exception e) {
+            LogUtils.log("Error : %", e);
         }
+        
     }
 
     private String extractVcValue(Object vcValue) {
@@ -576,6 +718,108 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         return userService.getUserByAttribute(attributeName, value, true);
     }   
 
+    private String buildVerifiableCredentialsJson(List<Map<String, Object>> vcResults) {
+        if (vcResults == null || vcResults.isEmpty()) {
+            return null;
+        }
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> credentialsMap = new HashMap<>();
+            
+            for (int i = 0; i < vcResults.size(); i++) {
+                Map<String, Object> vcItem = vcResults.get(i);
+                String vcString = (String) vcItem.get("vc");
+                
+                if (vcString != null) {
+                    // Parse the VC JSON string into a JSON object
+                    Map<String, Object> vcObject = mapper.readValue(vcString, Map.class);
+                    
+                    // Detect credential type by checking credentialSubject
+                    String credentialType = detectCredentialType(vcObject);
+                    
+                    credentialsMap.put(credentialType, vcObject);
+                    
+                    LogUtils.log("Processed verifiable credential %: type=%", i, credentialType);
+                }
+            }
+            
+            // Convert the map to JSON string
+            return mapper.writeValueAsString(credentialsMap);
+            
+        } catch (Exception e) {
+            LogUtils.log("Error building verifiable credentials JSON: %", e.getMessage());
+            return null;
+        }
+    }
+
+    private String detectCredentialType(Map<String, Object> vcObject) {
+        try {
+            Map<String, Object> credentialSubject = (Map<String, Object>) vcObject.get("credentialSubject");
+            
+            if (credentialSubject != null) {
+                // Check if it has UIN field - it's NID
+                if (credentialSubject.containsKey("UIN")) {
+                    return "NID";
+                }
+                // Check if it has tax-related fields - it's TAX
+                if (credentialSubject.containsKey("taxId") || credentialSubject.containsKey("taxNumber")) {
+                    return "TAX";
+                }
+            }
+            
+            // Fallback: check credential type in VC
+            Object typeObj = vcObject.get("type");
+            if (typeObj instanceof List) {
+                List<?> types = (List<?>) typeObj;
+                for (Object type : types) {
+                    String typeStr = type.toString();
+                    if (typeStr.contains("NationalID") || typeStr.contains("NID")) {
+                        return "NID";
+                    }
+                    if (typeStr.contains("Tax")) {
+                        return "TAX";
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            LogUtils.log("Error detecting credential type: %", e.getMessage());
+        }
+        
+        // Default fallback
+        return "UNKNOWN_" + System.currentTimeMillis();
+    }
+
+    private String mergeVerifiableCredentials(String existingJson, String newJson) {
+        if (existingJson == null || existingJson.isEmpty()) {
+            return newJson;
+        }
+        
+        if (newJson == null || newJson.isEmpty()) {
+            return existingJson;
+        }
+        
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            
+            // Parse existing and new credentials
+            Map<String, Object> existingMap = mapper.readValue(existingJson, Map.class);
+            Map<String, Object> newMap = mapper.readValue(newJson, Map.class);
+            
+            // Merge: new credentials override existing ones with same key
+            existingMap.putAll(newMap);
+            
+            LogUtils.log("Merged credentials. Total types: %", existingMap);
+            
+            return mapper.writeValueAsString(existingMap);
+            
+        } catch (Exception e) {
+            LogUtils.log("Error merging credentials: %. Using new credentials only.", e.getMessage());
+            return newJson;
+        }
+    }
+
     private String getSingleValuedAttr(User user, String attribute) {
 
         Object value = null;
@@ -585,7 +829,84 @@ public class AgamaInjiVerificationServiceImpl extends AgamaInjiVerificationServi
         } else {
             value = user.getAttribute(attribute, true, false);
         }
+        
+        // Handle JSONB columns - convert to string if needed
+        if (value != null && VERIFIABLE_CREDENTIALS.equals(attribute)) {
+            if (value instanceof String) {
+                return (String) value;
+            } else {
+                // If it's returned as a Map or other object, convert to JSON string
+                try {
+                    ObjectMapper mapper = new ObjectMapper();
+                    return mapper.writeValueAsString(value);
+                } catch (Exception e) {
+                    LogUtils.log("Error converting JSONB to string: %", e.getMessage());
+                    return value.toString();
+                }
+            }
+        }
+        
         return value == null ? null : value.toString();
 
+    }
+
+    public boolean removeCredentialType(String email, String credentialType) {
+        if (email == null || !email.contains("@")) {
+            LogUtils.log("Error: Invalid email provided");
+            return false;
+        }
+
+        if (credentialType == null || credentialType.isEmpty()) {
+            LogUtils.log("Error: Credential type is required");
+            return false;
+        }
+
+        try {
+            User user = getUser(MAIL, email);
+            
+            if (user == null) {
+                LogUtils.log("Error: User not found for email: %", email);
+                return false;
+            }
+
+            String existingCredentials = getSingleValuedAttr(user, VERIFIABLE_CREDENTIALS);
+            
+            if (existingCredentials == null || existingCredentials.isEmpty()) {
+                LogUtils.log("No credentials found for user: %", email);
+                return false;
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> credentialsMap = mapper.readValue(existingCredentials, Map.class);
+            
+            if (!credentialsMap.containsKey(credentialType)) {
+                LogUtils.log("Credential type '%' not found for user: %", credentialType, email);
+                return false;
+            }
+
+            // Remove the specified credential type
+            credentialsMap.remove(credentialType);
+            LogUtils.log("Removed credential type '%' for user: %", credentialType, email);
+
+            // Update user with remaining credentials
+            if (credentialsMap.isEmpty()) {
+                // If no credentials left, set to null or empty JSON object
+                user.setAttribute(VERIFIABLE_CREDENTIALS, "{}");
+                LogUtils.log("No credentials remaining, set to empty object");
+            } else {
+                String updatedCredentials = mapper.writeValueAsString(credentialsMap);
+                user.setAttribute(VERIFIABLE_CREDENTIALS, updatedCredentials);
+                LogUtils.log("Updated credentials. Remaining types: %", credentialsMap.keySet());
+            }
+
+            UserService userService = CdiUtil.bean(UserService.class);
+            userService.updateUser(user);
+            
+            return true;
+            
+        } catch (Exception e) {
+            LogUtils.log("Error removing credential type: %", e.getMessage());
+            return false;
+        }
     }
 }

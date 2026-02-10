@@ -11,10 +11,13 @@ public abstract class AgamaInjiVerificationService{
 
     public abstract String buildInjiWebAuthorizationUrl(String requestId, String transactionId);
 
-    // public abstract Map<String, Object> verifyInjiAppResult(Map<String, String> resultFromapp, String requestId, String transactionId);
     public abstract Map<String, Object> verifyInjiAppResult(String requestId, String transactionId);
 
-    public abstract Map<String, String> onboardUser();
+    public abstract Map<String, String> extractUserInfoFromVC();
+
+    public abstract Map<String, String> checkUserExists(String email, String uidRef);
+
+    public abstract Map<String, String> onboardUser(Map<String, String> userInfo, String password);
 
     public static AgamaInjiVerificationService getInstance(HashMap config){
         return AgamaInjiVerificationServiceImpl.getInstance(config);

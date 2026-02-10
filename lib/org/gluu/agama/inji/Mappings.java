@@ -16,9 +16,9 @@ public final class Mappings {
             map.put("uid", profile.get("userId"));
             map.put("mail", profile.get("mail"));
             map.put("displayName", profile.get("displayName"));
-            map.put("givenName", profile.get("displayName"));
-            map.put("cn", profile.get("displayName"));
-            map.put("sn", profile.get("displayName"));
+            map.put("givenName", profile.get("givenName"));
+            // map.put("cn", profile.get("displayName"));
+            // map.put("sn", profile.get("displayName"));
 
             return map;
         };    
