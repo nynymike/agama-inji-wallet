@@ -143,7 +143,9 @@
                     }
                 }
             }
-        }
+        },
+        "io.jans.casa.inji.link": {},
+        "code": {}
     },
     "name": "agama-inji-wallet"
 }
