@@ -9,9 +9,30 @@
 
 ## Overview
 
-Agama-Inji-Wallet is an authentication flow project that integrates [MOSIP Inji Wallet](https://injiweb.collab.mosip.net/) with Janssen authentication server. This project enables users to authenticate and register using verifiable credentials from their Inji digital wallet, specifically National ID (NID) credentials
+Agama-Inji-Wallet is an authentication flow project that integrates [MOSIP Inji Wallet](https://injiweb.collab.mosip.net/) with Janssen authentication server. This project enables users to authenticate and register using verifiable credentials from their Inji digital wallet.
 
-The flow validates credentials through the Inji Verify backend, extracts user information from the verified credential, and creates user accounts in the Janssen server with password setup.
+The flow validates credentials through the Inji Verify backend, extracts user information from verified credentials (primarily NID - National ID), and creates or updates user accounts in the Janssen server.
+
+### Key Concepts
+
+1. **Flow Input Handling**: The flow accepts flexible input parameters:
+   - **String input**: Direct `uidRef` value (e.g., `"user123"`)
+   - **Map input**: Metadata object from authentication flow (e.g., `{flowQname: "...", displayName: "..."}`)
+   - **Null input**: No user context provided
+   
+   When a Map object is detected, it's ignored and treated as null, allowing the flow to proceed with credential-based registration.
+
+2. **Credential Storage**: Complete verifiable credentials are stored as JSON in the database:
+   - **New Users**: NID credential information is used to register the user with extracted attributes
+   - **Existing Users**: Can add additional credentials (NID, TAX, etc.) to their profile
+   - **Credential Format**: Stored as JSONB with credential type as key (e.g., `{"NID": {...}, "TAX": {...}}`)
+   - **Automatic Merging**: New credentials are merged with existing ones without overwriting
+
+3. **Attribute Mapping**: The flow manually extracts NID attributes from shared credentials:
+   - Credentials are validated and verified through Inji Verify backend
+   - Specific attributes (fullName, email, phone, etc.) are extracted from the NID credential
+   - These attributes are mapped to Janssen user attributes using the `credentialMappings` configuration
+   - Only mapped attributes are used for user registration/update
 
 ## Features
 
@@ -30,18 +51,66 @@ The flow validates credentials through the Inji Verify backend, extracts user in
 
 ## Flow Sequence
 
-1. **Verification Request**: Agama flow creates a VP (Verifiable Presentation) verification request
-2. **Authorization URL**: Constructs OpenID4VP authorization URL for Inji Web
-3. **RFAC Call**: Redirects user to Inji Web wallet application
-4. **Credential Presentation**: User presents their NID credential from wallet
-5. **Verification**: Backend validates the credential and transaction
-6. **Credential Storage**: System stores complete verifiable credentials in JSONB format
-7. **User Check**: System checks if user already exists by email
-   - **Existing User**: Merges new credentials with existing ones, logs in directly
-   - **New User**: Shows setup page with editable fields
-8. **Profile Setup**: New users review NID data, can edit fields, and set password
-9. **Account Creation**: User account created with verified information and stored credentials
-10. **Authentication Complete**: User logged into Janssen
+### 1. Input Processing
+- Flow receives input parameter (string uidRef, Map object, or null)
+- If input is a Map (contains `flowQname`), it's ignored and set to null
+- If input is a string, it's used as `uidRef` for user lookup
+- If input is null, flow proceeds with credential-based authentication only
+
+### 2. Verification Request
+- Agama flow creates a VP (Verifiable Presentation) verification request
+- Sends request to Inji Verify backend with presentation definition
+
+### 3. Authorization & Credential Presentation
+- Constructs OpenID4VP authorization URL for Inji Web
+- RFAC call redirects user to Inji Web wallet application
+- User selects and presents their credential (e.g., NID) from wallet
+
+### 4. Credential Verification
+- Backend validates the presented credential
+- Verifies transaction ID and request ID status
+- Extracts complete verifiable credential data
+
+### 5. Credential Storage & Type Detection
+- System stores complete verifiable credentials in JSONB format
+- Automatically detects credential type (NID, TAX, etc.) based on content:
+  - **NID**: Contains `UIN` field in credentialSubject
+  - **TAX**: Contains `taxId` or `taxNumber` fields
+  - **Other**: Uses credential type from VC metadata
+- Credentials stored as: `{"NID": {credential_data}, "TAX": {credential_data}}`
+
+### 6. Attribute Extraction & Mapping
+- Extracts specific attributes from the credential's `credentialSubject`
+- Uses `credentialMappings` configuration to map VC claims to Janssen attributes
+- Example: `fullName` (from NID) → `displayName` (Janssen attribute)
+- Only configured attributes are extracted and used
+
+### 7. User Existence Check
+- Checks if user already exists by email or uidRef
+- **Existing User Path**:
+  - Merges new credentials with existing credentials in JSONB column
+  - Updates user profile with merged credentials
+  - Logs user in directly without password prompt
+  - User can have multiple credential types (NID + TAX + others)
+- **New User Path**:
+  - Proceeds to profile setup step
+
+### 8. Profile Setup (New Users Only)
+- Displays setup page with extracted NID attributes
+- User can review and edit the information
+- User must set a password for account creation
+- Editable fields include: name, email, phone, gender, birthdate, etc.
+
+### 9. Account Creation
+- Creates new user account with:
+  - Extracted and edited attributes from NID
+  - User-provided password
+  - Complete verifiable credentials stored in JSONB column
+- User is automatically logged in after creation
+
+### 10. Authentication Complete
+- User successfully authenticated into Janssen
+- Session established with user profile data
 
 ## Where To Deploy
 
@@ -102,7 +171,14 @@ Edit the configuration through Janssen TUI:
 
 ### Credential Mappings
 
-The `credentialMappings` array defines how credential claims map to Janssen user attributes:
+The `credentialMappings` array defines how credential claims are manually extracted and mapped to Janssen user attributes. When a user shares their NID credential from Inji wallet, the flow:
+
+1. Receives the verified credential from Inji Verify backend
+2. Extracts the `credentialSubject` section containing user claims
+3. Maps each configured claim to the corresponding Janssen attribute
+4. Uses these mapped attributes for user registration or profile update
+
+**Configuration Example:**
 
 ```json
 "credentialMappings": [
@@ -119,7 +195,21 @@ The `credentialMappings` array defines how credential claims map to Janssen user
 ]
 ```
 
-**Credential Claim** (left) → **Janssen Attribute** (right)
+**Mapping Format:**
+- **Left side** (key): Claim name in the verifiable credential's `credentialSubject`
+- **Right side** (value): Janssen user attribute name
+
+**How It Works:**
+1. User shares NID credential containing: `{credentialSubject: {fullName: "John Doe", email: "john@example.com", ...}}`
+2. Flow extracts `fullName` value and maps it to Janssen's `displayName` attribute
+3. Flow extracts `email` value and maps it to Janssen's `mail` attribute
+4. Only configured mappings are processed; unmapped claims are ignored
+5. Complete credential is still stored in JSONB for future reference
+
+**Important Notes:**
+- Currently, the flow uses the **first credential mapping** (NID) for user registration
+- Existing users can add additional credential types (TAX, etc.) which are merged into their profile
+- All credentials are stored in JSONB, but only NID attributes are used for initial registration
 
 ### Presentation Definition
 
@@ -168,15 +258,99 @@ Currently, the flow uses the first credential mapping (NID). Future enhancements
 
 ## Verifiable Credentials Storage
 
+### Storage Architecture
+
+The project stores complete verifiable credentials as JSON in the database, separate from the extracted user attributes:
+
+- **User Attributes**: Extracted NID claims (name, email, phone, etc.) stored in standard user attribute columns
+- **Verifiable Credentials**: Complete credential data stored in JSONB column for audit and future use
+
+### Storage Format
+
+Credentials are stored with credential type as the key:
+
+```json
+{
+  "NID": {
+    "@context": [...],
+    "type": ["VerifiableCredential", "MOSIPVerifiableCredential"],
+    "credentialSubject": {
+      "UIN": "1234567890",
+      "fullName": "John Doe",
+      "email": "john@example.com",
+      "phone": "+1234567890",
+      "gender": "Male",
+      "dateOfBirth": "1990/01/01"
+    },
+    "proof": {...}
+  },
+  "TAX": {
+    "@context": [...],
+    "type": ["VerifiableCredential", "TaxCredential"],
+    "credentialSubject": {
+      "taxId": "TAX123456",
+      "income": "50000",
+      "email": "john@example.com"
+    },
+    "proof": {...}
+  }
+}
+```
+
+### Credential Type Detection
+
+The system automatically detects credential types based on content:
+
+1. **NID Detection**: Checks for `UIN` field in `credentialSubject`
+2. **TAX Detection**: Checks for `taxId` or `taxNumber` fields
+3. **Fallback**: Uses credential `type` array from VC metadata
+4. **Unknown**: Assigns unique identifier if type cannot be determined
+
+### User Registration vs. Credential Addition
+
+**New User Registration:**
+- NID credential is shared and verified
+- NID attributes are extracted using `credentialMappings`
+- User account is created with extracted attributes
+- Complete NID credential stored in JSONB column
+- User sets password during registration
+
+**Existing User Adding Credentials:**
+- User already has an account (registered with NID or other method)
+- User shares additional credential (e.g., TAX credential)
+- New credential is merged with existing credentials in JSONB
+- User attributes may be updated if new credential contains mapped fields
+- User is logged in directly without password prompt
+- Example: User registered with NID, later adds TAX credential → Both stored as `{"NID": {...}, "TAX": {...}}`
+
 ### Database Schema
 
-The project stores complete verifiable credentials in a JSONB column. Following [docs](https://docs.jans.io/head/janssen-server/reference/database/pgsql-ops/#add-custom-attribute)
+Following [Janssen documentation](https://docs.jans.io/head/janssen-server/reference/database/pgsql-ops/#add-custom-attribute), add the JSONB column:
 
 ```sql
 ALTER TABLE "jansPerson" ADD COLUMN "verifiableCredentials" jsonb;
 ```
 
-Then add an attributes using Jans-TUI or Admin UI.
+Then add the attribute definition using Jans-TUI or Admin UI:
+- **Attribute Name**: `verifiableCredentials`
+- **Display Name**: `Verifiable Credentials`
+- **Data Type**: `JSON`
+- **Multivalued**: `false`
+
+### Credential Merging Logic
+
+When a user presents a new credential:
+
+1. System retrieves existing credentials from JSONB column
+2. Parses existing JSON: `{"NID": {...}}`
+3. Adds new credential with detected type: `{"NID": {...}, "TAX": {...}}`
+4. If credential type already exists, it's replaced with the new one
+5. Updates user record with merged credentials
+
+This allows users to:
+- Add multiple credential types over time
+- Update existing credentials by presenting new versions
+- Maintain complete audit trail of all verified credentials
 
 
 
